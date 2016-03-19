@@ -4,7 +4,7 @@ import sys
 
 '''
 Prints ReCodEx backend evaluate chain for one testing case.
-TODO: in_type == "dir" not yet supported.
+You need to add proper headers and first compilation task.
 '''
 
 
@@ -61,7 +61,7 @@ def print_sandbox(test, ext, output=sys.stdout, judge=False):
 
 
 def print_one_test(test, ext, output=sys.stdout):
-    priority = 1
+    priority = 2
 
     if not test.in_file:
         test.in_file = "{}.stdin".format(test.number)
@@ -69,14 +69,36 @@ def print_one_test(test, ext, output=sys.stdout):
         test.out_file = "{}.stdout".format(test.number)
 
     # Fetch input
-    args = ["{}.in".format(test.number), "${{SOURCE_DIR}}/{}".format(test.in_file)]
-    fetch_input = "fetch_input_{}".format(test.number)
-    print_task(fetch_input, priority, False, None, "fetch", args, output)
-    priority += 1
+    if test.in_type == 'dir':
+        # Fetch .zip file, extract it and remove downloaded .zip file
+        args = ["{}.zip".format(test.number), "${{SOURCE_DIR}}/{}.zip".format(test.number)]
+        fetch_input = "fetch_input_{}".format(test.number)
+        print_task(fetch_input, priority, False, None, "fetch", args, output)
+        priority += 1
+
+        args = ["${{SOURCE_DIR}}/{}.zip".format(test.number), "${SOURCE_DIR}"]
+        extract_input = "extract_input_{}".format(test.number)
+        print_task(extract_input, priority, False, [fetch_input], "extract", args, output)
+        priority += 1
+
+        args = ["${{SOURCE_DIR}}/{}.zip".format(test.number)]
+        remove_archive = "remove_archive_{}".format(test.number)
+        print_task(remove_archive, priority, False, [extract_input], "rm", args, output)
+        priority += 1
+
+        last_task = remove_archive
+    else:
+        # Just fetch regular input file
+        args = ["{}.in".format(test.number), "${{SOURCE_DIR}}/{}".format(test.in_file)]
+        fetch_input = "fetch_input_{}".format(test.number)
+        print_task(fetch_input, priority, False, None, "fetch", args, output)
+        priority += 1
+
+        last_task = fetch_input
 
     # Evaluate test
     eval_task = "eval_task_{}".format(test.number)
-    print_task(eval_task, priority, False, [fetch_input], "a.out", None, output)
+    print_task(eval_task, priority, False, [last_task], "a.out", None, output)
     if test.in_type == "stdio":
         output.write('      stdin: {}\n'.format(test.in_file))
     if test.out_type == "stdio":

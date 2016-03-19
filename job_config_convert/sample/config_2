@@ -1,0 +1,8 @@
+TESTS='1'
+POINTS_PER_TEST='100'
+TIME_LIMIT='0.5'
+MEM_LIMIT='8192'
+IN_TYPE='stdin'
+OUT_TYPE='stdout'
+OUTPUT_CHECK='bin/codex_judge $TDIR/$TEST.ok $TDIR/$TEST.out'
+OUTPUT_FILTER='bin/codex_filter $TDIR/$TEST.raw $TDIR/$TEST.out'

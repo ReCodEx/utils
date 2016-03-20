@@ -73,7 +73,7 @@ def print_one_test(test, ext, output=sys.stdout):
         # Fetch .zip file, extract it and remove downloaded .zip file
         args = ["{}.zip".format(test.number), "${{SOURCE_DIR}}/{}.zip".format(test.number)]
         fetch_input = "fetch_input_{}".format(test.number)
-        print_task(fetch_input, priority, False, None, "fetch", args, output)
+        print_task(fetch_input, priority, False, ["compilation"], "fetch", args, output)
         priority += 1
 
         args = ["${{SOURCE_DIR}}/{}.zip".format(test.number), "${SOURCE_DIR}"]
@@ -91,7 +91,7 @@ def print_one_test(test, ext, output=sys.stdout):
         # Just fetch regular input file
         args = ["{}.in".format(test.number), "${{SOURCE_DIR}}/{}".format(test.in_file)]
         fetch_input = "fetch_input_{}".format(test.number)
-        print_task(fetch_input, priority, False, None, "fetch", args, output)
+        print_task(fetch_input, priority, False, ["compilation"], "fetch", args, output)
         priority += 1
 
         last_task = fetch_input
@@ -100,9 +100,9 @@ def print_one_test(test, ext, output=sys.stdout):
     eval_task = "eval_task_{}".format(test.number)
     print_task(eval_task, priority, False, [last_task], "a.out", None, output)
     if test.in_type == "stdio":
-        output.write('      stdin: {}\n'.format(test.in_file))
+        output.write('      stdin: ${{EVAL_DIR}}/{}\n'.format(test.in_file))
     if test.out_type == "stdio":
-        output.write('      stdout: {}\n'.format(test.out_file))
+        output.write('      stdout: ${{EVAL_DIR}}/{}\n'.format(test.out_file))
     print_sandbox(test, ext, output)
     priority += 1
 

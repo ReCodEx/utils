@@ -204,7 +204,7 @@ function submit_exercise {
 
 	if $START_FS; then
 		rm -rf ${SERVER_DIR}/tasks/*
-		cp ${EXERCISES_DIR}/$1/data/*.{in,out} ${SERVER_DIR}/tasks
+		cp ${EXERCISES_DIR}/$1/data/* ${SERVER_DIR}/tasks
 	fi
 	${FAKE_SUBMIT} "${EXERCISES_DIR}/$1/submit" > /dev/null
 	echo "Submitting job $1 ..."
@@ -235,7 +235,7 @@ for ec in ${EXERCISES}; do
 done
 
 # Wait to finish execution
-wait_time 10
+wait_time 20
 
 # Copy interesting files to result dir
 result_dir=~/Desktop/job_results

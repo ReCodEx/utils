@@ -9,6 +9,7 @@ BROKER_CONF=/etc/recodex/broker/config.yml
 
 FILE_SERVER=
 FAKE_SUBMIT=
+FSRV_STORE=
 EXERCISES_DIR=
 EXERCISES=
 
@@ -23,16 +24,16 @@ START_WORKER=true
 function init_paths {
 	local path_to_script=$(dirname "$1")
 	mkdir -p ${TEMP_DIR}
-	if [ ! -f "$path_to_script/file_server.py" -o ! -f "$path_to_script/fake_submit.py" ]; then
+	if [ ! -f "$path_to_script/fsrv_store.py" -o ! -f "$path_to_script/fake_submit.py" ]; then
 		# we need to clone utils repo
 		git clone https://github.com/ReCodEx/utils.git "${TEMP_DIR}/utils" > /dev/null 2>&1
-		FILE_SERVER="${TEMP_DIR}/utils/submission/file_server.py"
 		FAKE_SUBMIT="${TEMP_DIR}/utils/submission/fake_submit.py"
+		FSRV_STORE="${TEMP_DIR}/utils/fsrv_store.py localhost 9999"
 	else
-		# file server is in the same repository as this script
-		FILE_SERVER="$path_to_script/file_server.py"
-		# and fake submit too
+		# fake submit is in the same repository as this script
 		FAKE_SUBMIT="$path_to_script/fake_submit.py"
+		# and fsrv store too
+		FSRV_STORE="$path_to_script/fsrv_store.py localhost 9999"
 	fi
 	
 	# try to find exercises repo in the same dir as the root of utils repo is
@@ -46,6 +47,11 @@ function init_paths {
 		# "recodex" (in ~/.ssh/config)
 		git clone ssh://recodex:/opt/git/exercises.git "${TEMP_DIR}/exercises" > /dev/null 2>&1
 		EXERCISES_DIR="${TEMP_DIR}/exercises"
+	fi
+
+	if [ $START_FS ]; then
+		git clone https://github.com/ReCodEx/fileserver.git "$TEMP_DIR/fsrv" > /dev/null 2>&1
+		FILE_SERVER="$TEMP_DIR/fsrv/fileserver.py runserver -p 9999 -d"
 	fi
 }
 
@@ -100,12 +106,15 @@ function check_or_init_binaries {
 	if [ ! -f ${WORKER_BIN} -o ! -f ${WORKER_CONF} ]; then
 		# worker needs to be build
 		git clone https://github.com/ReCodEx/worker.git "${TEMP_DIR}/worker" > /dev/null 2>&1
+		pushd $TEMP_DIR/worker
+		git submodule update --init
+		popd
 		pushd .
 		cd ${TEMP_DIR}/worker
 		mkdir -p build
 		cd build
-		cmake ..
-		make -j 4
+		cmake -j 4 ..
+		make
 		popd
 		WORKER_BIN="${TEMP_DIR}/worker/build/recodex-worker"
 		WORKER_CONF="${TEMP_DIR}/worker/examples/config.yml"
@@ -115,23 +124,27 @@ function check_or_init_binaries {
 	if [ ! -f ${BROKER_BIN} -o ! -f ${BROKER_CONF} ]; then
 		# broker needs to be build
 		git clone https://github.com/ReCodEx/broker.git "${TEMP_DIR}/broker" > /dev/null 2>&1
+		pushd $TEMP_DIR/broker
+		git submodule update --init
+		popd
 		pushd .
 		cd ${TEMP_DIR}/broker
 		mkdir -p build
 		cd build
-		cmake ..
-		make -j 4
+		cmake -j 4 ..
+		make
 		popd
-		WORKER_BIN="${TEMP_DIR}/broker/build/recodex-broker"
-		WORKER_CONF="${TEMP_DIR}/broker/examples/config.yml"
+		BROKER_BIN="${TEMP_DIR}/broker/build/recodex-broker"
+		BROKER_CONF="${TEMP_DIR}/broker/examples/config.yml"
 	fi
 }
 
 function start_broker {
 	if $START_BROKER; then
 		${BROKER_BIN} -c ${BROKER_CONF} &
+		rc=$?
 		BROKER_PID=$!
-		if [ $? -ne 0 ];then
+		if [ $rc -ne 0 ]; then
 			echo "Starting broker failed"
 			exit 1
 		else
@@ -151,8 +164,9 @@ function stop_broker {
 function start_worker {
 	if $START_WORKER; then
 		${WORKER_BIN} -c ${WORKER_CONF} > /dev/null 2>&1 &
+		rc=$?
 		WORKER_PID=$!
-		if [ $? -ne 0 ]; then
+		if [ $rc -ne 0 ]; then
 			echo "Starting worker failed"
 			exit 1
 		else
@@ -176,12 +190,7 @@ function start_file_server {
 		${FILE_SERVER} > ${TEMP_OUT} 2>&1 &
 		FILE_SERVER_PID=$!
 		sleep 1
-		SERVER_DIR=$(head -n 1 ${TEMP_OUT} | grep -o "/tmp/tmp[^ ]*")
-		if [ "${SERVER_DIR}" = "" ]; then
-			echo " Cannot read file server directory!"
-			exit 1
-		fi
-		echo "File server started in ${SERVER_DIR}"
+		echo "File server started"
 	fi
 }
 
@@ -190,7 +199,6 @@ function stop_file_server {
 		kill -s SIGINT ${FILE_SERVER_PID}
 		wait ${FILE_SERVER_PID} 2> /dev/null
 		rm ${TEMP_OUT}
-		rm -rf ${SERVER_DIR}
 		echo "File server stopped"
 	fi
 }
@@ -202,11 +210,11 @@ function submit_exercise {
 		return
 	fi
 
-	if $START_FS; then
-		#rm -rf ${SERVER_DIR}/tasks/*
-		cp -n ${EXERCISES_DIR}/$1/data/* ${SERVER_DIR}/tasks
-	fi
-	${FAKE_SUBMIT} "${EXERCISES_DIR}/$1/submit" > /dev/null
+	# Store auxiliary files
+	$FSRV_STORE ${EXERCISES_DIR}/$1/data > /dev/null
+
+	${FAKE_SUBMIT} "${EXERCISES_DIR}/$1/submit" > $TEMP_DIR/submit_output.txt
+	head -n 1 $TEMP_DIR/submit_output.txt >> $TEMP_DIR/result_urls.txt
 	echo "Submitting job $1 ..."
 }
 
@@ -222,6 +230,7 @@ function wait_time {
 
 init_paths $0
 parse_opts "$@"
+check_or_init_binaries
 
 # Prepare all resources
 start_file_server
@@ -242,7 +251,15 @@ wait_time $((15 * num_submits))
 # Copy interesting files to result dir
 result_dir=~/Desktop/job_results
 rm -rf $result_dir
-cp -R ${SERVER_DIR}/results $result_dir
+mkdir -p $result_dir
+
+pushd $result_dir
+while read line; do
+	wget http://localhost:9999$line 
+done < $TEMP_DIR/result_urls.txt
+rm $TEMP_DIR/result_urls.txt
+popd
+
 ln -s /var/log/recodex/broker.log $result_dir/broker.log
 ln -s /var/log/recodex/worker.log $result_dir/worker.log
 

@@ -16,7 +16,7 @@ parser.add_argument("--fs_port", help = "File server port", default = 9999)
 parser.add_argument("--broker_address", help = "Broker address")
 parser.add_argument("--broker_port", help = "Broker port", default = 9658)
 parser.add_argument("--header", help = "Specify a header value for the submission (any number of values is permitted)",
-                    action = "append", nargs = 2, metavar = ("KEY", "VALUE"))
+                    action = "append", nargs = 2, metavar = ("KEY", "VALUE"), default = [])
 parser.add_argument("submit_dir", help = "The directory to be submitted")
 parser.add_argument("--id", help = "An identifier of the submission", default = "")
 

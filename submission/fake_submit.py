@@ -27,11 +27,16 @@ for arg in argv_it:
 if submit_dir == "":
     sys.exit("no directory to submit was specified")
 
-# An iterator for the submitted files
-def walk_submit ():
-    for root, dirs, files in os.walk(submit_dir):
-        for name in files:
-            yield os.path.relpath(os.path.join(root, name), submit_dir)
+# Collect submitted files
+submission_files = {}
+for root, dirs, files in os.walk(submit_dir):
+    for name in files:
+        f = os.path.relpath(os.path.join(root, name), submit_dir)
+
+        submission_files[f] = (
+            os.path.basename(f),
+            open(os.path.join(submit_dir, f), "rb")
+        )
 
 # Make up a job ID and hope for the best
 job_id = uuid.uuid4()
@@ -42,10 +47,7 @@ fsrv_url = "http://localhost:{port}".format(port = fsrv_port)
 try:
     reply = requests.post(
         "{url}/submissions/{id}".format(url = fsrv_url, id = job_id),
-        {
-            f.encode(): open(os.path.join(submit_dir, f), "rb").read() 
-            for f in walk_submit()
-        }
+        files = submission_files
     )
 except:
     sys.exit("Error sending files to the file server")

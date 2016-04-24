@@ -17,12 +17,14 @@ for root, dirs, files in os.walk(args.source_directory):
     for name in files:
         path = os.path.join(root, name)
 
-        with open(path, "rb") as f:
-            data[path] = f.read()
+        data[path] = (
+            os.path.basename(path),
+            open(path, "rb")
+        )
 
 tasks_url = "http://{address}:{port}/tasks".format(
     address = args.address,
     port = args.port
 )
-reply = requests.post(tasks_url, data)
+reply = requests.post(tasks_url, files = data)
 print(reply.text)

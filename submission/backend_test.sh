@@ -213,7 +213,7 @@ function submit_exercise {
 	# Store auxiliary files
 	$FSRV_STORE ${EXERCISES_DIR}/$1/data > /dev/null
 
-	${FAKE_SUBMIT} "${EXERCISES_DIR}/$1/submit" > $TEMP_DIR/submit_output.txt
+	${FAKE_SUBMIT} --id "$1" "${EXERCISES_DIR}/$1/submit" > $TEMP_DIR/submit_output.txt
 	head -n 1 $TEMP_DIR/submit_output.txt >> $TEMP_DIR/result_urls.txt
 	echo "Submitting job $1 ..."
 }

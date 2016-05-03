@@ -61,15 +61,28 @@ if __name__ == "__main__":
     except:
         sys.exit("Error connecting to the broker")
 
+    # A helper that yields frames of the message that will be sent to the broker
+    def generate_message():
+        # Command and job ID
+        yield b"eval"
+        yield str(job_id).encode()
+
+        # A frame for every requested header
+        for k, v in args.header:
+            yield "{header}={value}".format(header = k, value = v).encode()
+
+        # An empty delimiter frame
+        yield b""
+
+        # URL of the archive with the submission
+        yield "{url}{path}".format(url = fsrv_url, path = reply_data["archive_path"]).encode()
+
+        # URL where results should be stored after evaluation
+        yield "{url}{path}".format(url = fsrv_url, path = reply_data["result_path"]).encode()
+
+
     # Send the request
-    broker.send_multipart(
-        [b"eval"] +
-        [str(job_id).encode()] +
-        ["{}={}".format(k, v).encode() for k, v in args.header] +
-        [b""] +
-        ["{url}{path}".format(url = fsrv_url, path = reply_data["archive_path"]).encode()] +
-        ["{url}{path}".format(url = fsrv_url, path = reply_data["result_path"]).encode()]
-    )
+    broker.send_multipart(generate_message())
 
     result = broker.recv()
     print(result)

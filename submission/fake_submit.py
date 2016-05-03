@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
 
     # Send the request
-    broker.send_multipart(generate_message())
+    broker.send_multipart(list(generate_message()))
 
     result = broker.recv()
     print(result)

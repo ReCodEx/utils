@@ -245,20 +245,25 @@ for ec in ${EXERCISES}; do
 	sleep 1
 done
 
-# Wait to finish execution (15 seconds for each submit)
-wait_time $((15 * num_submits))
-
 # Copy interesting files to result dir
 result_dir=~/Desktop/job_results
 rm -rf $result_dir
 mkdir -p $result_dir
 
-pushd $result_dir
+pushd $result_dir > /dev/null
 while read line; do
-	wget http://localhost:9999$line 
+	echo -n "Waiting for result of $line "
+	wget_ret=1
+	while [ ! $wget_ret -eq 0 ]; do
+		echo -n "."
+		wget http://localhost:9999$line 2> /dev/null 
+		wget_ret=$?
+		sleep 1
+	done
+	echo ""
 done < $TEMP_DIR/result_urls.txt
 rm $TEMP_DIR/result_urls.txt
-popd
+popd > /dev/null
 
 ln -s /var/log/recodex/broker.log $result_dir/broker.log
 ln -s /var/log/recodex/worker.log $result_dir/worker.log

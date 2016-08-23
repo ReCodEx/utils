@@ -1,0 +1,6 @@
+- hosts: fileserver
+  become: yes
+  roles:
+      - common
+      - apache
+      - fileserver

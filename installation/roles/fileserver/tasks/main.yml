@@ -1,0 +1,13 @@
+- name: clone fileserver repository
+  git: repo=https://github.com/ReCodEx/fileserver.git dest=/opt/recodex/fileserver
+
+- name: install python requirements
+  pip: executable=/usr/bin/pip3 requirements=/opt/recodex/fileserver/requirements.txt
+
+- name: create fileserver working directory
+  file: path=/var/recodex-fileserver state=directory mode=0777
+
+- name: setup fileserver inside Apache
+  copy: src="{{ role_path }}/files/010-fileserver.conf" dest=/etc/httpd/conf.d/010-fileserver.conf
+  notify:
+      - restart apache

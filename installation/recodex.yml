@@ -1,0 +1,7 @@
+- include: broker.yml
+- include: workers.yml
+- include: monitor.yml
+- include: database.yml
+- include: fileserver.yml
+- include: webapi.yml
+- include: webapp.yml

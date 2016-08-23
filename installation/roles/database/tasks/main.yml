@@ -1,0 +1,8 @@
+- name: make sure MariaDB is installed
+  yum: name=mariadb,mariadb-server,mariadb-devel state=latest
+
+- name: make sure MariaDB is running and enabled
+  service: name=mariadb state=running enabled=yes
+
+- name: set database root password
+  command: mysqladmin -u root password "rootPassword"

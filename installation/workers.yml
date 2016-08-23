@@ -1,0 +1,7 @@
+- hosts: workers
+  become: yes
+  roles:
+      - common
+      - backend
+      - isolate
+      - worker

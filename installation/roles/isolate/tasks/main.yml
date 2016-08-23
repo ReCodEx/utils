@@ -1,0 +1,17 @@
+- name: make sure asciidoc is installed
+  yum: name=asciidoc state=latest
+
+- name: clone isolate repository
+  git: repo=https://github.com/ioi/isolate.git dest=/tmp/isolate
+
+- name: build isolate
+  make: chdir=/tmp/isolate params=NUM_THREADS=4
+
+- name: install isolate
+  make: chdir=/tmp/isolate target=install
+
+- name: install isolate man page
+  make: chdir=/tmp/isolate target=install-doc
+
+- name: disable address space randomizaiton
+  copy: src="{{ role_path }}/files/10-recodex.conf" dest=/etc/sysctl.d/10-recodex.conf

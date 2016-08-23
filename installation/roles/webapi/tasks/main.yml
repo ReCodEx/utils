@@ -1,0 +1,13 @@
+- name: make sure PHP and composer are installed
+  yum: name=php,php-mysql,composer state=latest
+
+- name: clone api repository
+  git: repo=https://github.com/ReCodEx/api.git dest=/opt/recodex/webapi
+
+- name: install dependencies
+  command: composer install chdir=/opt/recodex/webapi
+
+- name: configure Apache
+  copy: src="{{ role_path }}/files/010-webapi.conf" dest=/etc/httpd/conf.d/010-webapi.conf
+  notify:
+      - restart apache

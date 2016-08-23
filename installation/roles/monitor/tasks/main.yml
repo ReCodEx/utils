@@ -1,0 +1,21 @@
+- name: make sure python3 is installed
+  yum: name=python34,python34-setuptools state=latest
+
+- name: make sure pip3 is installed
+  command: easy_install-3.4 pip
+
+- name: clone monitor repository
+  git: repo=https://github.com/ReCodEx/monitor.git dest=/tmp/monitor
+
+- name: install python requirements
+  pip: executable=/usr/bin/pip3 requirements=/tmp/monitor/requirements.txt
+
+- name: build RPM package
+  command: python3 setup.py bdist_rpm --post-install ./monitor/install/postinst chdir=/tmp/monitor
+
+- name: install monitor binary
+  yum: name=/tmp/monitor/dist/recodex-monitor-0.2.0-1.noarch.rpm state=present
+
+- name: make sure monitor is running and enabled
+  service: name=recodex-monitor state=started enabled=yes
+

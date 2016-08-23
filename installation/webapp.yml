@@ -1,0 +1,6 @@
+- hosts: webapp
+  become: yes
+  roles:
+      - common
+      - apache
+      - webapp

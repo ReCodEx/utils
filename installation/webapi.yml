@@ -1,0 +1,6 @@
+- hosts: webapi
+  become: yes
+  roles:
+      - common
+      - apache
+      - webapi

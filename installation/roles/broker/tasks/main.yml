@@ -1,0 +1,20 @@
+- name: clone broker repository
+  git: repo=https://github.com/ReCodEx/broker.git recursive=yes dest=/tmp/broker
+
+- name: create build directory
+  file: path=/tmp/broker/build state=directory mode=0755
+
+- name: run cmake to generate the Makefile
+  command: /usr/bin/cmake3 ..
+  args:
+      chdir: /tmp/broker/build/
+
+- name: build RPM package
+  make: chdir=/tmp/broker/build/ target=package params=NUM_THREADS=4
+
+- name: install broker package
+  yum: name=/tmp/broker/build/recodex-broker-0.1.2-1-x86_64.rpm state=present
+
+- name: make sure broker is running and enabled
+  service: name=recodex-broker state=started enabled=yes
+

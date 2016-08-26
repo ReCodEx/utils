@@ -1,0 +1,14 @@
+- name: clone cleaner repository
+  git: repo=https://github.com/ReCodEx/cleaner.git dest={{ source_dir }}/cleaner
+
+- name: install python dependencies
+  pip: executable=/usr/bin/pip3 requirements={{ source_dir }}/cleaner/requirements.txt
+
+- name: build RPM package
+  command: python3 setup.py bdist_rpm --post-install ./cleaner/install/postinst chdir={{ source_dir }}/cleaner
+
+- name: install cleaner binary
+  yum: name={{ source_dir }}/cleaner/dist/recodex-cleaner-0.1.0-1.noarch.rpm state=present
+
+- name: enable cleaner autorun
+  service: name=recodex-cleaner.timer state=started enabled=yes

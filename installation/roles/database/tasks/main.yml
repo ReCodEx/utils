@@ -5,4 +5,8 @@
   service: name=mariadb state=running enabled=yes
 
 - name: set database root password
-  command: mysqladmin -u root password "rootPassword"
+  command: mysqladmin -u root password "{{ mysql_root_password }}"
+
+- name: create ~/.my.cnf file
+  template: src="my.cnf.j2" dest="/root/.my.cnf" owner=root group=root mode=0600
+

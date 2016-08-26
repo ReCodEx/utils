@@ -1,20 +1,20 @@
 - name: add NodeJS repository
-  command: curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
+  command: sh -c "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -"
 
 - name: make sure NodeJS server is installed
   yum: name=nodejs state=latest disable_gpg_check=yes
 
 - name: clone Web App repository
-  git: repo=https://github.com/ReCodEx/web-app.git dest=/opt/recodex/webapp
+  git: repo=https://github.com/ReCodEx/web-app.git dest={{ source_dir }}/webapp
 
 - name: install dependencies
-  command: npm install chdir=/opt/recodex/webapp
+  command: npm install chdir={{ source_dir }}/webapp
 
 - name: install pm2
   command: npm install -g pm2
 
 - name: build the Web App
-  command: npm run build chdir=/opt/recodex/webapp
+  command: npm run build chdir={{ source_dir }}/webapp
 
 - name: run the application in NodeJS server
-  command: pm2 start bin/server.js chdir=/opt/recodex/webapp
+  command: pm2 start bin/server.js chdir={{ source_dir }}/webapp

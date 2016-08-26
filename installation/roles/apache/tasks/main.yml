@@ -1,9 +1,3 @@
-- name: make sure python3 is installed
-  yum: name=python34,python34-setuptools,python34-devel state=latest
-
-- name: make sure pip3 is installed
-  command: easy_install-3.4 pip
-
 - name: make sure Apache is installed
   yum: name=httpd,httpd-devel state=latest
 

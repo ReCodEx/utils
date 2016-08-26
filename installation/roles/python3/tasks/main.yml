@@ -1,0 +1,5 @@
+- name: make sure python3 is installed
+  yum: name=python34,python34-setuptools state=latest
+
+- name: make sure pip3 is installed
+  command: easy_install-3.4 pip

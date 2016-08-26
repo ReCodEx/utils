@@ -1,43 +1,20 @@
 - name: make sure libarchive is installed
   yum: name=libarchive,libarchive-devel state=latest
 
-- name: make sure python3 is installed
-  yum: name=python34,python34-setuptools state=latest
-
-- name: make sure pip3 is installed
-  command: easy_install-3.4 pip
-
 - name: clone worker repository
-  git: repo=https://github.com/ReCodEx/worker.git recursive=yes dest=/tmp/worker
+  git: repo=https://github.com/ReCodEx/worker.git recursive=yes dest={{ source_dir }}/worker
 
 - name: create build directory
-  file: path=/tmp/worker/build state=directory mode=0755
+  file: path={{ source_dir }}/worker/build state=directory mode=0755
 
 - name: run cmake to generate the Makefile
-  command: /usr/bin/cmake3 ..
-  args:
-      chdir: /tmp/worker/build/
+  command: /usr/bin/cmake3 .. chdir={{ source_dir }}/worker/build/
 
 - name: build RPM package
-  make: chdir=/tmp/worker/build/ target=package params=NUM_THREADS=4
+  make: chdir={{ source_dir }}/worker/build/ target=package params=NUM_THREADS=4
 
 - name: install worker package
-  yum: name=/tmp/worker/build/recodex-worker-0.1.2-1-x86_64.rpm state=present
+  yum: name={{ source_dir }}/worker/build/recodex-worker-0.1.2-1-x86_64.rpm state=present
 
 - name: make sure worker is running and enabled
   service: name=recodex-worker@1 state=started enabled=yes
-
-- name: clone cleaner repository
-  git: repo=https://github.com/ReCodEx/cleaner.git dest=/tmp/cleaner
-
-- name: install python dependencies
-  pip: executable=/usr/bin/pip3 requirements=/tmp/cleaner/requirements.txt
-
-- name: build RPM package
-  command: python3 setup.py bdist_rpm --post-install ./cleaner/install/postinst chdir=/tmp/cleaner
-
-- name: install cleaner binary
-  yum: name=/tmp/cleaner/dist/recodex-cleaner-0.1.0-1.noarch.rpm state=present
-
-- name: enable cleaner autorun
-  service: name=recodex-cleaner.timer state=started enabled=yes

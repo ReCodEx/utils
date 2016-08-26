@@ -5,3 +5,5 @@
       - backend
       - isolate
       - worker
+      - python3
+      - cleaner

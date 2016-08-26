@@ -1,13 +1,37 @@
+- name: make sure ZeroMQ is installed
+  yum: name=zeromq,zeromq-devel state=latest
+
+- name: install Remi repository for new PHP version
+  yum: name=http://rpms.remirepo.net/enterprise/remi-release-7.rpm state=present
+
+- name: enable the repository
+  command: yum-config-manager --enable remi-php70
+
 - name: make sure PHP and composer are installed
-  yum: name=php,php-mysql,composer state=latest
+  yum: name=php,php-mysqlnd,php-pecl-zmq,composer state=latest
 
 - name: clone api repository
   git: repo=https://github.com/ReCodEx/api.git dest={{ source_dir }}/webapi
 
-- name: install dependencies
+- name: install dependencies via composer
   command: composer install chdir={{ source_dir }}/webapi
 
+- name: create configuration file with database credentials
+  template: src="{{ role_path }}/templates/config.local.neon.j2" dest="{{ source_dir }}/webapi/app/config/config.local.neon"
+
+- name: give Apache privileges to source code tree
+  file: path="{{ source_dir }}/webapi" owner=apache recurse=yes
+
+- name: install the Python MySQLB module
+  yum: name=MySQL-python state=latest
+
+- name: create database 'recodex-api'
+  mysql_db: name=recodex-api state=present login_host=localhost login_user=root login_password=rootPassword
+
+- name: update database schema
+  command: php www/index.php orm:schema-tool:update --force chdir="{{ source_dir }}/webapi"
+
 - name: configure Apache
-  copy: src="{{ role_path }}/files/010-webapi.conf" dest=/etc/httpd/conf.d/010-webapi.conf
+  template: src="{{ role_path }}/templates/010-webapi.conf.j2" dest=/etc/httpd/conf.d/010-webapi.conf
   notify:
       - restart apache

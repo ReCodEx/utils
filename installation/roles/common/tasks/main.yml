@@ -10,3 +10,9 @@
 - name: make sure user 'recodex' is present
   user: name=recodex shell=/sbin/nologin
 
+- name: set selinux to permissive mode
+  selinux: state=permissive policy=targeted
+
+- name: set selinux to permissive in runtime without reboot
+  command: setenforce 0
+

@@ -10,5 +10,8 @@
 - name: install cleaner binary
   yum: name={{ source_dir }}/cleaner/dist/recodex-cleaner-0.1.0-1.noarch.rpm state=present
 
+- name: configure cleaner instance
+  template: src="{{ role_path }}/templates/config.yml.j2" dest="/etc/recodex/cleaner/config.yml" owner=recodex
+
 - name: enable cleaner autorun
   service: name=recodex-cleaner.timer state=started enabled=yes

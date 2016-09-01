@@ -1,6 +1,8 @@
-Listen 4000
+{% if webapi_public_port != 80 %}
+Listen {{ webapi_public_port }}
+{% endif %}
 
-<VirtualHost *:4000>
+<VirtualHost {{ webapi_public_addr }}:{{ webapi_public_port }}>
     # The ServerName directive sets the request scheme, hostname and port that
     # the server uses to identify itself. This is used when creating
     # redirection URLs. In the context of virtual hosts, the ServerName
@@ -8,9 +10,9 @@ Listen 4000
     # match this virtual host. For the default virtual host (this file) this
     # value is not decisive as it is used as a last resort host regardless.
     # However, you must set it for any further virtual host explicitly.
-    ServerName localhost
+    ServerName recodex_api_server
 
-    ServerAdmin ptr.stef@gmail.com
+    ServerAdmin {{ admin_email }}
     DocumentRoot "{{ source_dir }}/webapi/www"
 
     # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,

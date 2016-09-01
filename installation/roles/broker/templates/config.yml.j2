@@ -1,0 +1,25 @@
+# Address and port for clients (frontend)
+clients:
+    address: "{{ broker_to_webapi_addr }}"
+    port: {{ broker_to_webapi_port }}
+# Address and port for workers
+workers:
+    address: "{{ broker_to_workers_addr }}"
+    port: {{ broker_to_workers_port }}
+    max_liveness: 4
+    ping_interval: 1000
+# Frontend address which will be used for notifying on certain events
+notifier:
+    address: "127.0.0.1"
+    port: 8080
+    username: ""
+    password: ""
+monitor:
+    address: "{{ monitor_zeromq_addr }}"
+    port: {{ monitor_zeromq_port }}
+logger:
+    file: "/var/log/recodex/broker"  # w/o suffix - actual names will be broker.log, broker.1.log, ...
+    level: "debug"  # level of logging
+    max-size: 1048576  # 1 MB; max size of file before log rotation
+    rotations: 3  # number of rotations kept
+

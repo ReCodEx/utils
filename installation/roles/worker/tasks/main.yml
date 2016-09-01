@@ -16,5 +16,8 @@
 - name: install worker package
   yum: name={{ source_dir }}/worker/build/recodex-worker-0.1.2-1-x86_64.rpm state=present
 
+- name: configure worker instance
+  template: src="{{ role_path }}/templates/config.yml.j2" dest="/etc/recodex/worker/config-1.yml" owner=recodex
+
 - name: make sure worker is running and enabled
   service: name=recodex-worker@1 state=started enabled=yes

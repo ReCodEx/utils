@@ -1,0 +1,34 @@
+---  # only one document with all configuration needed
+worker-id: 1
+broker-uri: tcp://{{ broker_to_workers_addr }}:{{ broker_to_workers_port }}
+headers:
+    env:
+        - c
+        - python
+        - cpp
+    threads: 2
+hwgroup: "group1"
+working-directory: /tmp/recodex
+file-managers:
+    - hostname: "http://{{ fileserver_addr }}:{{ fileserver_port }}"  # port is optional
+      username: "{{ fileserver_username }}"  # can be ignored in specific modules
+      password: "{{ fileserver_password }}"  # can be ignored in specific modules
+file-cache:  # only in case that there is cache module
+    cache-dir: "{{ worker_cache_dir }}"
+logger:
+    file: "/var/log/recodex/worker"  # w/o suffix - actual names will be worker.log, worker.1.log, ...
+    level: "debug"  # level of logging - one of "debug", "warn", "emerg"
+    max-size: 1048576  # 1 MB; max size of file before log rotation
+    rotations: 3  # number of rotations kept
+limits:
+    time: 30  # in secs
+    wall-time: 30  # seconds
+    extra-time: 2  # seconds
+    stack-size: 0  # normal in KB, but 0 means no special limit
+    memory: 900000  # in KB
+    parallel: 16  # time and memory limits are merged
+    disk-size: 1048576
+    disk-files: 100
+    environ-variable:
+        PATH: /usr/bin
+...

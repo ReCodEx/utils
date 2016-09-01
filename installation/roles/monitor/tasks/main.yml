@@ -10,6 +10,9 @@
 - name: install monitor binary
   yum: name={{ source_dir }}/monitor/dist/recodex-monitor-0.2.0-1.noarch.rpm state=present
 
+- name: configure monitor
+  template: src="{{ role_path }}/templates/config.yml.j2" dest="/etc/recodex/monitor/config.yml" owner=recodex
+
 - name: make sure monitor is running and enabled
   service: name=recodex-monitor state=started enabled=yes
 

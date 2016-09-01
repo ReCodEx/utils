@@ -16,6 +16,9 @@
 - name: install dependencies via composer
   command: composer install chdir={{ source_dir }}/webapi
 
+- name: make sure cache is flushed
+  file: path="{{ source_dir }}/webapi/temp/cache" state=absent
+
 - name: create configuration file with database credentials
   template: src="{{ role_path }}/templates/config.local.neon.j2" dest="{{ source_dir }}/webapi/app/config/config.local.neon"
 

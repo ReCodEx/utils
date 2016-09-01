@@ -1,6 +1,8 @@
-Listen 9999
+{% if fileserver_port != 80 %}
+Listen {{ fileserver_port }}
+{% endif %}
 
-<VirtualHost *:9999>
+<VirtualHost {{ fileserver_addr }}:{{ fileserver_port }}>
     LogLevel info
     ServerName recodex-fsrv
     SetEnv WORKING_DIRECTORY /var/recodex-fileserver

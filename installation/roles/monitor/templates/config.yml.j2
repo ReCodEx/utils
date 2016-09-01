@@ -1,0 +1,13 @@
+---
+websocket_uri:
+    - "{{ monitor_websocket_addr }}"  # empty for all interfaces
+    - {{ monitor_websocket_port }}
+zeromq_uri:
+    - "{{ monitor_zeromq_addr }}"
+    - {{ monitor_zeromq_port }}
+logger:
+    file: "/var/log/recodex/monitor.log"
+    level: "debug"  # level of logging - one of "debug", "info", "warning", "error", "critical"
+    max-size: 1048576  # 1 MB; max size of file before log rotation
+    rotations: 3  # number of rotations kept
+...

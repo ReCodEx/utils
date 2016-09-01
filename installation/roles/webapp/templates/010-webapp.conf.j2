@@ -1,4 +1,8 @@
-<VirtualHost *:80>
+{% if webapp_public_port != 80 %}
+Listen {{ webapp_public_port }}
+{% endif %}
+
+<VirtualHost {{ webapp_public_addr }}:{{ webapp_public_port }}>
         # The ServerName directive sets the request scheme, hostname and port that
         # the server uses to identify itself. This is used when creating
         # redirection URLs. In the context of virtual hosts, the ServerName
@@ -6,9 +10,9 @@
         # match this virtual host. For the default virtual host (this file) this
         # value is not decisive as it is used as a last resort host regardless.
         # However, you must set it for any further virtual host explicitly.
-		
-        ServerName localhost
-        ServerAdmin ptr.stef@gmail.com
+
+        ServerName recodex_webapp_server
+        ServerAdmin {{ admin_email }}
 
         # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
         # error, crit, alert, emerg.
@@ -28,10 +32,10 @@
 
 
         # And to monitor websocket as well
-        ProxyPass /ws/ ws://127.0.0.1:4567/
+        ProxyPass /ws/ ws://{{ monitor_websocket_addr }}:{{ monitor_websocket_port }}/
         # Forward requests to node.js server
-        ProxyPass / http://127.0.0.1:8080/
-        ProxyPassReverse / http://127.0.0.1:8080/
+        ProxyPass / http://{{ webapp_node_addr }}:{{ webapp_node_port }}/
+        ProxyPassReverse / http://{{ webapp_node_addr }}:{{ webapp_node_port }}/
 
         #SSLCertificateFile /etc/letsencrypt/live/recodex.projekty.ms.mff.cuni.cz/fullchain.pem
         #SSLCertificateKeyFile /etc/letsencrypt/live/recodex.projekty.ms.mff.cuni.cz/privkey.pem

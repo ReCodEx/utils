@@ -17,4 +17,10 @@
   command: npm run build chdir={{ source_dir }}/webapp
 
 - name: run the application in NodeJS server
-  command: pm2 start bin/server.js chdir={{ source_dir }}/webapp
+  command: pm2 start -f bin/server.js chdir={{ source_dir }}/webapp
+
+- name: configure Apache proxy
+  template: src="{{ role_path }}/templates/010-webapp.conf.j2" dest="/etc/httpd/conf.d/010-webapp.conf"
+  notify:
+      - restart apache
+

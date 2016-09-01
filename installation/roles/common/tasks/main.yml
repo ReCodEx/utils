@@ -15,4 +15,5 @@
 
 - name: set selinux to permissive in runtime without reboot
   command: setenforce 0
+  ignore_errors: yes
 

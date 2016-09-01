@@ -2,13 +2,17 @@
   yum: name=gcc-c++ state=latest
 
 - name: make sure cmake is installed
-  yum: name=cmake3 state=latest
+  yum: name=cmake3 state=latest disable_gpg_check=yes
 
 - name: make sure ZeroMQ is installed
-  yum: name=zeromq,zeromq-devel state=latest
+  yum: name=zeromq,zeromq-devel state=latest disable_gpg_check=yes
 
 - name: make sure yaml-cpp is installed
-  yum: name=yaml-cpp,yaml-cpp-devel state=latest
+  yum: name=yaml-cpp,yaml-cpp-devel state=latest disable_gpg_check=yes
 
 - name: make sure libcurl is installed
-  yum: name=libcurl-devel state=latest
+  yum: name=libcurl-devel state=latest disable_gpg_check=yes
+
+- name: make sure rpm-build is installed
+  yum: name=rpm-build state=latest
+

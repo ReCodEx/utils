@@ -1,5 +1,5 @@
 - include: broker.yml
-- include: workers.yml
+- include: worker.yml
 - include: monitor.yml
 - include: database.yml
 - include: fileserver.yml

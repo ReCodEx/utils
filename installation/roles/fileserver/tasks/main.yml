@@ -8,6 +8,6 @@
   file: path=/var/recodex-fileserver state=directory mode=0777
 
 - name: setup fileserver inside Apache
-  copy: src="{{ role_path }}/templates/010-fileserver.conf.j2" dest=/etc/httpd/conf.d/010-fileserver.conf
+  template: src="{{ role_path }}/templates/010-fileserver.conf.j2" dest=/etc/httpd/conf.d/010-fileserver.conf
   notify:
       - restart apache

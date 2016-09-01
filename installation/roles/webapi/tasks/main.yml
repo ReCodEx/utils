@@ -19,10 +19,7 @@
 - name: create configuration file with database credentials
   template: src="{{ role_path }}/templates/config.local.neon.j2" dest="{{ source_dir }}/webapi/app/config/config.local.neon"
 
-- name: give Apache privileges to source code tree
-  file: path="{{ source_dir }}/webapi" owner=apache recurse=yes
-
-- name: install the Python MySQLB module
+- name: install the Python MySQL module
   yum: name=MySQL-python state=latest
 
 - name: create database 'recodex-api'
@@ -30,6 +27,9 @@
 
 - name: update database schema
   command: php www/index.php orm:schema-tool:update --force chdir="{{ source_dir }}/webapi"
+
+- name: give Apache privileges to source code tree
+  file: path="{{ source_dir }}/webapi" owner=apache recurse=yes
 
 - name: configure Apache
   template: src="{{ role_path }}/templates/010-webapi.conf.j2" dest=/etc/httpd/conf.d/010-webapi.conf

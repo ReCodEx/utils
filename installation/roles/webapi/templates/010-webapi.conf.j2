@@ -8,7 +8,7 @@ Listen 4000
     # match this virtual host. For the default virtual host (this file) this
     # value is not decisive as it is used as a last resort host regardless.
     # However, you must set it for any further virtual host explicitly.
-    ServerName recodex.projekty.ms.mff.cuni.cz
+    ServerName localhost
 
     ServerAdmin ptr.stef@gmail.com
     DocumentRoot "{{ source_dir }}/webapi/www"
@@ -39,6 +39,7 @@ Listen 4000
     #Header always set Strict-Transport-Security "max-age=15768000"
     
     <Directory "{{ source_dir }}/webapi/www">
-	Require all granted
+        Require all granted
+        AllowOverride All
     </Directory>
 </VirtualHost>

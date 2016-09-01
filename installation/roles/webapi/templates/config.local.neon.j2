@@ -1,5 +1,23 @@
+parameters:
+  accessManager:
+    leeway: 60
+    issuer: "recodex_at_{{ fileserver_addr }}:{{ fileserver_port }}"
+    audience: "recodex_at_{{ fileserver_addr }}:{{ fileserver_port }}"
+    expiration: 86400
+    algorithm: HS256
+
+  fileServer:
+    address: http://{{ fileserver_addr }}:{{ fileserver_port }}
+    username: "{{ fileserver_username }}"
+    password: "{{ fileserver_password }}"
+    jobConfigFileName: "job-config.yml"
+
+  broker:
+address: tcp://{{ broker_to_webapi_addr }}:{{ broker_to_webapi_port }}
+
+
 doctrine:
   host: localhost
   user: root
-  password: rootPassword
+  password: {{ mysql_root_password }}
   dbname: recodex-api

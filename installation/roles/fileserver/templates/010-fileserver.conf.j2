@@ -14,4 +14,11 @@ Listen {{ fileserver_port }}
         Require all granted
     </Directory>
 
+    <Location />
+	AuthName "ReCodEx fileserver"
+	AuthType Basic
+	AuthUserFile /etc/httpd/recodex_htpasswd
+	Require valid-user
+    </Location>
+
 </VirtualHost>

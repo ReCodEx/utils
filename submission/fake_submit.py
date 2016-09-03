@@ -13,6 +13,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--fs_address", help = "File server address", default = "localhost")
 parser.add_argument("--fs_port", help = "File server port", default = 9999)
+parser.add_argument("--fs_user", help = "File server user", default = None)
+parser.add_argument("--fs_pass", help = "File server password", default = None)
 parser.add_argument("--broker_address", help = "Broker address", default = "localhost")
 parser.add_argument("--broker_port", help = "Broker port", default = 9658)
 parser.add_argument("--header", help = "Specify a header value for the submission (any number of values is permitted)",
@@ -41,9 +43,11 @@ if __name__ == "__main__":
     fsrv_url = "http://{address}:{port}".format(address = args.fs_address, port = args.fs_port)
 
     try:
+        auth_info = dict(auth=(args.fs_user, args.fs_pass)) if args.fs_user else {}
         reply = requests.post(
             "{url}/submissions/{id}".format(url = fsrv_url, id = job_id),
-            files = submission_files
+            files = submission_files,
+            **auth_info
         )
     except:
         sys.exit("Error sending files to the file server")

@@ -1,5 +1,5 @@
 - name: make sure python3 is installed
-  yum: name=python34,python34-setuptools state=present disable_gpg_check=yes
+  yum: name=python34,python34-setuptools,python34-devel state=present disable_gpg_check=yes
 
 - name: make sure pip3 is installed
   command: easy_install-3.4 pip

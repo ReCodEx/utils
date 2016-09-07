@@ -7,6 +7,9 @@
 - name: make sure git is installed
   yum: name=git state=latest
 
+- name: make sure yum utils are installed
+  yum: name=yum-utils state=latest
+
 - name: make sure user 'recodex' is present
   user: name=recodex shell=/sbin/nologin
 

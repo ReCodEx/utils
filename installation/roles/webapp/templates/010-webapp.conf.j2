@@ -11,7 +11,7 @@ Listen {{ webapp_public_port }}
         # value is not decisive as it is used as a last resort host regardless.
         # However, you must set it for any further virtual host explicitly.
 
-        ServerName recodex_webapp_server
+        ServerName {{ recodex_hostname }}
         ServerAdmin {{ admin_email }}
 
         # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,

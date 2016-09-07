@@ -1,5 +1,5 @@
 - name: make sure Apache is installed
-  yum: name=httpd,httpd-devel state=latest
+  yum: name=httpd,httpd-devel,mod_ssl state=latest
 
 - name: make sure mod_wsgi for Python 3 is installed
   pip: executable=/usr/bin/pip3 name=mod_wsgi

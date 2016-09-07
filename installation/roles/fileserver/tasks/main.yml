@@ -8,7 +8,7 @@
   file: path=/var/recodex-fileserver state=directory mode=0777
 
 - name: install python dependency for htpasswd module
-  yum: name=python-passlib state=latest
+  yum: name=python-passlib state=latest disable_gpg_check=yes
 
 - name: create htpasswd file with fileserver credentials
   htpasswd: path=/etc/httpd/recodex_htpasswd name="{{ fileserver_username }}" password="{{ fileserver_password }}" create=yes state=present

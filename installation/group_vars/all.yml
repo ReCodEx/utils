@@ -1,14 +1,15 @@
 source_dir: "/opt/recodex"
-mysql_root_password: "rootPassword"
+mysql_root_password: "recodexDBfrontendHeslo"
 admin_email: "admin@recodex.ms.mff.cuni.cz"
+recodex_hostname: "recodex.projekty.ms.mff.cuni.cz"
 
 # Addresses and ports
 webapp_node_addr: "127.0.0.1"
 webapp_node_port: 8080
-    
+
 webapp_public_addr: "*"
-webapp_public_port: 80
-    
+webapp_public_port: 443
+
 webapi_public_addr: "*"
 webapi_public_port: 4000
 
@@ -17,10 +18,10 @@ broker_to_webapi_port: 9658
 
 broker_to_workers_addr: "127.0.0.1"
 broker_to_workers_port: 9657
-    
+
 monitor_websocket_addr: "127.0.0.1"
 monitor_websocket_port: 4567
-    
+
 monitor_zeromq_addr: "127.0.0.1"
 monitor_zeromq_port: 7894
 
@@ -28,8 +29,8 @@ fileserver_addr: "127.0.0.1"
 fileserver_port: 9999
 
 # Fileserver credentials
-fileserver_username: "re"
-fileserver_password: "codex"
+fileserver_username: "recodexFileserverUserName"
+fileserver_password: "Fq2NXPa+X1XGayx3iGTTwyv1w1RYZcg4T6xPAFe6"
 
 # Worker config
 worker_cache_dir: "/tmp/recodex/cache"

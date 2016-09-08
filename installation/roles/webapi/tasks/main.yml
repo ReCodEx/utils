@@ -20,7 +20,7 @@
   file: path="{{ source_dir }}/webapi/temp/cache" state=absent
 
 - name: create configuration file with database credentials
-  template: src="{{ role_path }}/templates/config.local.neon.j2" dest="{{ source_dir }}/webapi/app/config/config.local.neon"
+  template: src="config.local.neon.j2" dest="{{ source_dir }}/webapi/app/config/config.local.neon"
 
 - name: install the Python MySQL module
   yum: name=MySQL-python state=latest
@@ -35,6 +35,6 @@
   file: path="{{ source_dir }}/webapi" owner=apache recurse=yes
 
 - name: configure Apache
-  template: src="{{ role_path }}/templates/010-webapi.conf.j2" dest=/etc/httpd/conf.d/010-webapi.conf
+  template: src="010-webapi.conf.j2" dest=/etc/httpd/conf.d/010-webapi.conf
   notify:
       - restart apache

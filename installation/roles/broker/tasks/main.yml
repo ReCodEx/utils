@@ -14,7 +14,7 @@
   yum: name={{ source_dir }}/broker/build/recodex-broker-0.1.2-1-x86_64.rpm state=present
 
 - name: configure broker instance
-  template: src="{{ role_path }}/templates/config.yml.j2" dest="/etc/recodex/broker/config.yml" owner=recodex
+  template: src="config.yml.j2" dest="/etc/recodex/broker/config.yml" owner=recodex
 
 - name: make sure broker is running and enabled
   service: name=recodex-broker state=started enabled=yes

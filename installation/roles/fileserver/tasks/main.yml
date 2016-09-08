@@ -17,12 +17,12 @@
   htpasswd: path=/etc/httpd/recodex_htpasswd name="{{ fileserver_username }}" password="{{ fileserver_password }}" create=yes state=present
 
 - name: setup fileserver as uwsgi service
-  template: src="{{ role_path }}/templates/fileserver.ini.j2" dest=/etc/uwsgi.d/fileserver.ini owner=recodex group=recodex
+  template: src="fileserver.ini.j2" dest=/etc/uwsgi.d/fileserver.ini owner=recodex group=recodex
 
 - name: run uwsgi service
   service: name=uwsgi state=started enabled=yes
 
 - name: setup fileserver proxy inside Apache
-  template: src="{{ role_path }}/templates/010-fileserver.conf.j2" dest=/etc/httpd/conf.d/010-fileserver.conf
+  template: src="010-fileserver.conf.j2" dest=/etc/httpd/conf.d/010-fileserver.conf
   notify:
       - restart apache

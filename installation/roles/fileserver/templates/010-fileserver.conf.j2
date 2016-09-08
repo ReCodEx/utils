@@ -3,12 +3,8 @@ Listen {{ fileserver_port }}
 {% endif %}
 
 <VirtualHost {{ fileserver_addr }}:{{ fileserver_port }}>
+    ServerName {{ recodex_hostname }}
     LogLevel info
-    ServerName recodex-fsrv
-    SetEnv WORKING_DIRECTORY /var/recodex-fileserver
-    WSGIDaemonProcess recodex-fsrv processes=1 user=recodex python-path="{{ source_dir }}/fileserver"
-    WSGIProcessGroup recodex-fsrv
-    WSGIScriptAlias / "{{ source_dir }}/fileserver/fileserver.wsgi"
 
     <Directory "{{ source_dir }}/fileserver">
         Require all granted
@@ -20,5 +16,8 @@ Listen {{ fileserver_port }}
 	AuthUserFile /etc/httpd/recodex_htpasswd
 	Require valid-user
     </Location>
+
+    ProxyPass / http://127.0.0.1:10999/
+    ProxyPassReverse / http://127.0.0.1:10999/
 
 </VirtualHost>

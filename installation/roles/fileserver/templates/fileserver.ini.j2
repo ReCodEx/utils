@@ -1,0 +1,16 @@
+[uwsgi]
+wd = /var/recodex-fileserver
+plugin = python3
+plugin = router_rewrite
+plugin = router_static
+http-socket = :10999
+wsgi-file = {{ source_dir }}/fileserver/fileserver.wsgi
+chdir = {{ source_dir }}/fileserver
+env = WORKING_DIRECTORY=%(wd)
+check-static = %(wd)
+static-safe = %(wd)
+uid = recodex
+
+route = ^/tasks/(.)(.*)$ rewrite:/tasks/$1/$1$2
+route-if-not = isfile:%(wd)/${PATH_INFO} continue:
+route-run = static:%(wd)/${PATH_INFO}

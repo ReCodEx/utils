@@ -1,14 +1,14 @@
 - name: make sure Apache is installed
   yum: name=httpd,httpd-devel,mod_ssl state=latest
 
-- name: make sure mod_wsgi for Python 3 is installed
-  pip: executable=/usr/bin/pip3 name=mod_wsgi
+#- name: make sure mod_wsgi for Python 3 is installed
+#  pip: executable=/usr/bin/pip3 name=mod_wsgi
 
-- name: configure mod_wsgi
-  command: mod_wsgi-express install-module
+#- name: configure mod_wsgi
+#  command: mod_wsgi-express install-module
 
-- name: enable mod_wsgi
-  copy: src="{{ role_path }}/files/00-wsgi.conf" dest=/etc/httpd/conf.modules.d/00-wsgi.conf
+#- name: enable mod_wsgi
+#  copy: src="{{ role_path }}/files/00-wsgi.conf" dest=/etc/httpd/conf.modules.d/00-wsgi.conf
 
 - name: make sure Apache is running and enabled
   service: name=httpd state=running enabled=yes

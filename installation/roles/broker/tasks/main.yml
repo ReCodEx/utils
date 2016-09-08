@@ -19,3 +19,10 @@
 - name: make sure broker is running and enabled
   service: name=recodex-broker state=started enabled=yes
 
+- name: enable api port in firewall
+  firewalld: port={{ broker_to_webapi_port }}/tcp state=enabled permanent=yes immediate=yes
+  when: broker_firewall_api == 'yes'
+
+- name: enable workers port in firewall
+  firewalld: port={{ broker_to_workers_port }}/tcp state=enabled permanent=yes immediate=yes
+  when: broker_firewall_workers == 'yes'

@@ -10,3 +10,6 @@
 - name: create ~/.my.cnf file
   template: src="my.cnf.j2" dest="/root/.my.cnf" owner=root group=root mode=0600
 
+- name: enable port in firewall
+  firewalld: service=mysql state=enabled permanent=yes immediate=yes
+  when: database_firewall == 'yes'

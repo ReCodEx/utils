@@ -26,3 +26,7 @@
   template: src="010-fileserver.conf.j2" dest=/etc/httpd/conf.d/010-fileserver.conf
   notify:
       - restart apache
+
+- name: enable port in firewall
+  firewalld: port={{ fileserver_port }}/tcp state=enabled permanent=yes immediate=yes
+  when: fileserver_firewall == 'yes'

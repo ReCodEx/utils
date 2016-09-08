@@ -38,3 +38,7 @@
   template: src="010-webapi.conf.j2" dest=/etc/httpd/conf.d/010-webapi.conf
   notify:
       - restart apache
+
+- name: enable port in firewall
+  firewalld: port={{ webapi_public_port }}/tcp state=enabled permanent=yes immediate=yes
+  when: webapi_firewall == 'yes'

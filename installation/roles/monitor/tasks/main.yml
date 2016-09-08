@@ -16,3 +16,12 @@
 - name: make sure monitor is running and enabled
   service: name=recodex-monitor state=started enabled=yes
 
+- name: enable websocket port in firewall
+  firewalld: port={{ monitor_websocket_port }}/tcp state=enabled permanent=yes immediate=yes
+  when: monitor_firewall_websocket == 'yes'
+
+- name: enable zeromq port in firewall
+  firewalld: port={{ monitor_zeromq_port }}/tcp state=enabled permanent=yes immediate=yes
+  when: monitor_firewall_zeromq == 'yes'
+
+

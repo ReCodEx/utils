@@ -1,6 +1,4 @@
 - hosts: broker
   become: yes
   roles:
-      - common
-      - backend
       - broker

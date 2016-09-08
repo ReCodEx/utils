@@ -1,7 +1,4 @@
 - hosts: fileserver
   become: yes
   roles:
-      - common
-      - python3
-      - apache
       - fileserver

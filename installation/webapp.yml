@@ -1,7 +1,4 @@
 - hosts: webapp
   become: yes
   roles:
-      - common
-      - python3
-      - apache
       - webapp

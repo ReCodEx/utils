@@ -1,4 +1,4 @@
-{% if webapi_public_port != 80 %}
+{% if webapi_public_port != 80 and webapi_public_port != 443 %}
 Listen {{ webapi_public_port }}
 {% endif %}
 

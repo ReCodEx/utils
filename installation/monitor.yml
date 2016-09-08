@@ -1,6 +1,4 @@
 - hosts: monitor
   become: yes
   roles:
-      - common
-      - python3
       - monitor

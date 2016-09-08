@@ -1,7 +1,4 @@
 - hosts: webapi
   become: yes
   roles:
-      - common
-      - python3
-      - apache
       - webapi

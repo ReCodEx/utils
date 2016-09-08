@@ -1,9 +1,5 @@
 - hosts: workers
   become: yes
   roles:
-      - common
-      - backend
-      - isolate
       - worker
-      - python3
       - cleaner

@@ -26,7 +26,10 @@
   yum: name=MySQL-python state=latest
 
 - name: create database 'recodex-api'
-  mysql_db: name=recodex-api state=present login_host=localhost login_user=root login_password={{ mysql_root_password }}
+  mysql_db: name=recodex-api state=present
+
+- name: create database user for api
+  mysql_user: name={{ mysql_recodex_username }} password={{ mysql_recodex_password }} priv="recodex-api.*:ALL" state=present
 
 - name: update database schema
   command: php www/index.php orm:schema-tool:update --force chdir="{{ source_dir }}/webapi"

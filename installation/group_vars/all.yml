@@ -1,5 +1,7 @@
 source_dir: "/opt/recodex"
-mysql_root_password: "recodexDBfrontendHeslo"
+mysql_root_password: "ZnA40P/JgoclRdK06LV3GGsx/MH740gn6FxP6ng7"
+mysql_recodex_username: "api_user"
+mysql_recodex_password: "JwejDktOP0A4C5MIfPoFKFicQNO5DkZB1fq1Ytoi"
 admin_email: "admin@recodex.ms.mff.cuni.cz"
 recodex_hostname: "recodex.projekty.ms.mff.cuni.cz"
 

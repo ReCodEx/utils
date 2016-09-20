@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     # Connect to the broker
     context = zmq.Context()
-    broker = context.socket(zmq.REQ)
+    broker = context.socket(zmq.DEALER)
 
     try:
         broker.connect("tcp://{address}:{port}".format(address = args.broker_address, port = args.broker_port))
@@ -67,7 +67,8 @@ if __name__ == "__main__":
 
     # A helper that yields frames of the message that will be sent to the broker
     def generate_message():
-        # Command and job ID
+        # Identity, command and job ID
+        yield b"identity"
         yield b"eval"
         yield str(job_id).encode()
 
@@ -84,10 +85,17 @@ if __name__ == "__main__":
         # URL where results should be stored after evaluation
         yield "{url}{path}".format(url = fsrv_url, path = reply_data["result_path"]).encode()
 
-
+    poll = zmq.Poller()
+    poll.register(broker, zmq.POLLIN)
+    
     # Send the request
     broker.send_multipart(list(generate_message()))
 
-    ack = broker.recv()
-    result = broker.recv()
-    print(result)
+    sockets = dict(poll.poll(1000))
+    if broker in sockets:
+        ack = broker.recv()
+
+    sockets = dict(poll.poll(1000))
+    if broker in sockets:
+        result = broker.recv()
+        print(result)

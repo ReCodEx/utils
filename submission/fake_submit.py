@@ -88,5 +88,6 @@ if __name__ == "__main__":
     # Send the request
     broker.send_multipart(list(generate_message()))
 
+    ack = broker.recv()
     result = broker.recv()
-    print(result)
+	print(result)

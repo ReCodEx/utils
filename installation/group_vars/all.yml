@@ -26,6 +26,10 @@ broker_firewall_api: "no"
 broker_to_workers_addr: "127.0.0.1"
 broker_to_workers_port: 9657
 broker_firewall_workers: "no"
+broker_notifier_address: "https://recodex.projekty.ms.mff.cuni.cz/v1/broker-reports"
+broker_notifier_port: 4000
+broker_notifier_username: "re"
+broker_notifier_password: "codex"
 
 monitor_websocket_addr: "127.0.0.1"
 monitor_websocket_port: 4567

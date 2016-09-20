@@ -37,9 +37,10 @@ Listen {{ webapp_public_port }}
         ProxyPass / http://{{ webapp_node_addr }}:{{ webapp_node_port }}/
         ProxyPassReverse / http://{{ webapp_node_addr }}:{{ webapp_node_port }}/
 
-        #SSLCertificateFile /etc/letsencrypt/live/recodex.projekty.ms.mff.cuni.cz/fullchain.pem
+        #SSLEngine on
+        #SSLCertificateFile /etc/letsencrypt/live/recodex.projekty.ms.mff.cuni.cz/cert.pem
+        #SSLCertificateChainFile /etc/letsencrypt/live/recodex.projekty.ms.mff.cuni.cz/fullchain.pem
         #SSLCertificateKeyFile /etc/letsencrypt/live/recodex.projekty.ms.mff.cuni.cz/privkey.pem
-        #Include /etc/letsencrypt/options-ssl-apache.conf
 
         #Protocols h2 http/1.1
 

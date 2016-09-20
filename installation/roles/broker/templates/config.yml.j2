@@ -10,10 +10,10 @@ workers:
     ping_interval: 1000
 # Frontend address which will be used for notifying on certain events
 notifier:
-    address: "127.0.0.1"
-    port: 8080
-    username: ""
-    password: ""
+    address: "{{ broker_notifier_address }}"
+    port: {{ broker_notifier_port }}
+    username: "{{ broker_notifier_username }}"
+    password: "{{ broker_notifier_password }}"
 monitor:
     address: "{{ monitor_zeromq_addr }}"
     port: {{ monitor_zeromq_port }}

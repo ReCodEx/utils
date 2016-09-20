@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # Parse the JSON data in the reply
     reply_data = json.loads(reply.text)
-    print(reply_data["result_path"])
+    print("Fileserver expects the result will go to", reply_data["result_path"])
 
     # Connect to the broker
     context = zmq.Context()
@@ -67,8 +67,7 @@ if __name__ == "__main__":
 
     # A helper that yields frames of the message that will be sent to the broker
     def generate_message():
-        # Identity, command and job ID
-        yield b"identity"
+        # Command and job ID
         yield b"eval"
         yield str(job_id).encode()
 
@@ -91,11 +90,13 @@ if __name__ == "__main__":
     # Send the request
     broker.send_multipart(list(generate_message()))
 
-    sockets = dict(poll.poll(1000))
-    if broker in sockets:
-        ack = broker.recv()
+    ack = broker.recv_multipart()
 
-    sockets = dict(poll.poll(1000))
-    if broker in sockets:
-        result = broker.recv()
-        print(result)
+    if ack[1] == b"ack":
+        print("Broker acknowledged our humble request")
+    else:
+        print("Received something weird from the broker:", ack)
+
+    response = broker.recv_multipart()
+    print("Broker responded with:", response[1].decode())
+

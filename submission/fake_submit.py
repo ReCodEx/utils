@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # Parse the JSON data in the reply
     reply_data = json.loads(reply.text)
-    print("Fileserver expects the result will go to", reply_data["result_path"])
+    print(reply_data["result_path"])
 
     # Connect to the broker
     context = zmq.Context()
@@ -92,11 +92,11 @@ if __name__ == "__main__":
 
     ack = broker.recv_multipart()
 
-    if ack[1] == b"ack":
+    if ack[0] == b"ack":
         print("Broker acknowledged our humble request")
     else:
         print("Received something weird from the broker:", ack)
 
     response = broker.recv_multipart()
-    print("Broker responded with:", response[1].decode())
+    print("Broker responded with:", response[0].decode())
 

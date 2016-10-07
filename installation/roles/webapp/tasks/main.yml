@@ -7,6 +7,9 @@
 - name: clone Web App repository
   git: repo=https://github.com/ReCodEx/web-app.git dest={{ source_dir }}/webapp
 
+- name: configure the app
+  template: src="env.j2" dest="{{ source_dir }}/webapp/.env"
+
 - name: install dependencies
   command: npm install chdir={{ source_dir }}/webapp
 

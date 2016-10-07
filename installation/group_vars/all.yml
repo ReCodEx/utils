@@ -13,6 +13,7 @@ webapp_public_addr: "*"
 webapp_public_port: 443
 webapp_firewall: "yes"
 
+webapi_public_endpoint: "https://recodex.projekty.ms.mff.cuni.cz:4000/v1"
 webapi_public_addr: "*"
 webapi_public_port: 4000
 webapi_firewall: "yes"

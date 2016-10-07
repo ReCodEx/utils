@@ -34,6 +34,15 @@
 - name: update database schema
   command: php www/index.php orm:schema-tool:update --force chdir="{{ source_dir }}/webapi"
 
+- name: flush cache
+  file: path="{{ source_dir }}/webapi/temp/cache" state=absent
+
+- name: fill database with initial data
+  command: php www/index.php db:fill chdir="{{ source_dir }}/webapi"
+
+- name: flush cache
+  file: path="{{ source_dir }}/webapi/temp/cache" state=absent
+
 - name: give Apache privileges to source code tree
   file: path="{{ source_dir }}/webapi" owner=apache recurse=yes
 

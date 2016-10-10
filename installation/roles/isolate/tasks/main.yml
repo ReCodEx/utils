@@ -2,7 +2,7 @@
   yum: name=asciidoc state=latest
 
 - name: clone isolate repository
-  git: repo=https://github.com/ioi/isolate.git dest={{ source_dir }}/isolate
+  git: repo=https://github.com/ioi/isolate.git dest={{ source_dir }}/isolate version={{ isolate_version }}
 
 - name: build isolate
   make: chdir={{ source_dir }}/isolate params=NUM_THREADS=4

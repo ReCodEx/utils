@@ -52,3 +52,4 @@ fileserver_password: "Fq2NXPa+X1XGayx3iGTTwyv1w1RYZcg4T6xPAFe6"
 worker_cache_dir: "/tmp/recodex/cache"
 worker_cache_age: 3600
 
+isolate_version: "v1.3"

@@ -3,6 +3,7 @@
 import sys
 import argparse
 import re
+import os
 
 import print_yml
 
@@ -44,6 +45,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert old Codex config to some new ReCodEx one')
     parser.add_argument('-i', '--input', type=str, nargs=1, required=True, help='input file with old config')
     parser.add_argument('-o', '--output', nargs=1, required=False, help='output file (default stdout)')
+    parser.add_argument('-d', '--data', type=str, nargs=1, required=True, help='data folder with all test files')
     args = parser.parse_args()
 
     if args.output:
@@ -146,4 +148,4 @@ if __name__ == '__main__':
     #    print(i, file=out_stream)
 
     # Print yaml
-    print_yml.print_job(tests, out_stream)
+    print_yml.print_job(tests, args.data[0], out_stream)

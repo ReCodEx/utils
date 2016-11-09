@@ -146,7 +146,4 @@ if __name__ == '__main__':
     #    print(i, file=out_stream)
 
     # Print yaml
-    print_yml.print_task("compilation", 1, True, None, "your_binary_here", ["arg1", "arg2"], out_stream)
-    for i in tests:
-        # Print config for "cs" extension
-        print_yml.print_one_test(i, "cs", out_stream)
+    print_yml.print_job(tests, out_stream)

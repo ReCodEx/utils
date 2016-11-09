@@ -8,6 +8,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("address", help = "File server address")
 parser.add_argument("port", help = "File server port")
 parser.add_argument("source_directory", help = "The directory to be stored")
+parser.add_argument("--fs_user", help = "File server user", default = None)
+parser.add_argument("--fs_pass", help = "File server password", default = None)
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -26,5 +28,10 @@ if __name__ == "__main__":
         address = args.address,
         port = args.port
     )
-    reply = requests.post(tasks_url, files = data)
+    try:
+        auth_info = dict(auth=(args.fs_user, args.fs_pass)) if args.fs_user else {}
+        reply = requests.post(tasks_url, files = data, **auth_info)
+    except:
+        sys.exit("Error sending files to the file server")
+
     print(reply.text)

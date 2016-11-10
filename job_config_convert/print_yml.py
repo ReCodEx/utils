@@ -71,7 +71,7 @@ def print_task(identity, task_type, test_id, priority, fatal, dependencies, bina
     output.write('      cmd:\n')
     output.write('          bin: "{}"\n'.format(binary))
 
-    if args and len(args) > 0:
+    if args:
         output.write('          args:\n')
         for arg in args:
             output.write('              - "{}"\n'.format(arg))

@@ -56,7 +56,10 @@ if __name__ == '__main__':
     with open(args.input[0], mode='r', encoding='utf-8') as in_file:
         lines = list()
         for line in in_file:
-            line_arr = line.rstrip().split(sep='=')
+            line = line.strip()
+            if not line:
+                continue
+            line_arr = line.split(sep='=')
             line_arr[1] = line_arr[1][1:-1]  # Remove leading and trailing ' symbol in value field (not present in key)
             lines.append(line_arr)
 

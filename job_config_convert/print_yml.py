@@ -159,22 +159,33 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
     print_task(fetch_output, "", test.number, priority, False, [eval_task], "fetch", args, output)
     priority += 1
 
-    # Filter outputs (clean comments)
-    args = [test.out_file, "{}_filtered".format(test.out_file)]
-    judge_filter = "judge_filter_{}".format(test.number)
-    print_task(judge_filter, "", test.number, priority, False, [fetch_output], "${JUDGES_DIR}/recodex-judge-filter", args, output)
-    print_sandbox(test, ext, output, judge=True)
-    priority += 1
+    if test.out_filter:
+        # Filter outputs (clean comments)
+        args = [test.out_file, "{}_filtered".format(test.out_file)]
+        judge_filter = "judge_filter_{}".format(test.number)
+        print_task(judge_filter, "", test.number, priority, False, [fetch_output], "${JUDGES_DIR}/recodex-judge-filter", args, output)
+        print_sandbox(test, ext, output, judge=True)
+        priority += 1
+
+    # Prepare for judging
+    judge_input_file = "{}".format(test.out_file)
+    if test.out_filter:
+        judge_input_file = "{}_filtered".format(test.out_file)
+    judge_dependencies = [fetch_output]
+    if test.out_filter:
+        judge_dependencies = [judge_filter]
 
     # Judging results
-    args = ["{}.out".format(test.number), "{}_filtered".format(test.out_file)]
+    args = ["{}.out".format(test.number), judge_input_file]
     judge_results = "judge_test_{}".format(test.number)
-    print_task(judge_results, "evaluation", test.number, priority, False, [judge_filter], "${JUDGES_DIR}/recodex-judge-normal", args, output)
+    print_task(judge_results, "evaluation", test.number, priority, False, judge_dependencies, "${JUDGES_DIR}/recodex-judge-normal", args, output)
     print_sandbox(test, ext, output, judge=True)
     priority += 1
 
     # Remove junk
     args = ["${{SOURCE_DIR}}/{}.out".format(test.number), "${{SOURCE_DIR}}/{}".format(test.in_file),
-            "${{SOURCE_DIR}}/{}".format(test.out_file), "${{SOURCE_DIR}}/{}_filtered".format(test.out_file)]
+            "${{SOURCE_DIR}}/{}".format(test.out_file)]
+    if test.out_filter:
+        args.append("${{SOURCE_DIR}}/{}_filtered".format(test.out_file))
     remove_junk = "remove_junk_{}".format(test.number)
     print_task(remove_junk, "", test.number, priority, False, [judge_results], "rm", args, output)

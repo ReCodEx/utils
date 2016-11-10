@@ -3,7 +3,6 @@
 import sys
 import argparse
 import re
-import os
 
 import print_yml
 
@@ -29,8 +28,8 @@ class JobTest:
         self.cmd_args = []
 
     def __str__(self):
-        output = "TEST {} -- points: {}, in_type: {}, out_type: {}, filter: {}, judge: {}"\
-            .format(self.number, self.points, self.in_type, self.out_type, self.out_filter, self.judge)
+        output = "TEST {} -- points: {}, executable: {}, args: {}, in_type: {}, out_type: {}, filter: {}, judge: {}"\
+            .format(self.number, self.points, self.executable, self.cmd_args, self.in_type, self.out_type, self.out_filter, self.judge)
 
         if self.in_file:
             output += ", in_file: {}".format(self.in_file)
@@ -99,7 +98,7 @@ if __name__ == '__main__':
         if mem_limit_key in config:
             test.limits['default'].mem_limit = config[mem_limit_key]
 
-    # Extension based configs
+    # Extension based global configs
     for config_key in config:
         # Handle global execution command
         m = re.search('EXT_([^_]*)_TEST_EXEC_CMD', config_key)
@@ -110,7 +109,6 @@ if __name__ == '__main__':
                 test.executable = exec_split[0]
                 if len(exec_split) > 1:
                     test.cmd_args = exec_split[slice(1, len(exec_split))]
-
 
         # Handle global limits for extension
         m = re.search('EXT_([^_]*)_TIME_LIMIT', config_key)
@@ -133,6 +131,8 @@ if __name__ == '__main__':
                     test.limits[extension].mem_limit = test.limits['default'].mem_limit
                 test.limits[extension].mem_limit = config[config_key]
 
+    # Extension based test local configs
+    for config_key in config:
         # Handle test specific limits for extension
         m = re.search('EXT_([^_]*)_TEST_([^_]*)_TIME_LIMIT', config_key)
         if m:
@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     # Useful printing for testing :-)
     # for i in tests:
-    #    print(i, file=out_stream)
+    #     print(i, file=out_stream)
 
     # Print yaml
     print_yml.print_job(tests, args.data[0], out_stream, args.extension[0])

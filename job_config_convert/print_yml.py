@@ -15,13 +15,23 @@ def sha1_of_file(file):
         return hashlib.sha1(f.read()).hexdigest()
 
 
-def print_job(tests, data_folder, output):
+def parse_config_variables(job_test):
+    job_test.executable = job_test.executable.replace("/usr/local/mono/bin/mono", "/usr/bin/mono")
+    job_test.executable = job_test.executable.replace("$PROBLEM", "***binary***")
+    for i in range(0, len(job_test.cmd_args)):
+        job_test.cmd_args[i] = job_test.cmd_args[i].replace("$PROBLEM", "***binary***")
+
+    job_test.out_filter = job_test.out_filter.replace("bin/codex_filter", "${JUDGES_DIR}/recodex-judge-filter")
+    job_test.judge = job_test.judge.replace("bin/codex_judge", "${JUDGES_DIR}/recodex-judge-normal")
+    job_test.judge = job_test.judge.replace("diff", "/usr/bin/diff")
+
+
+def print_job(tests, data_folder, output, ext="cs"):
     print_header(output)
     output.write('tasks:\n')
     print_compilation(output)
     for i in tests:
-        # Print config for "cs" extension
-        print_one_test(i, "cs", data_folder, output)
+        print_one_test(i, ext, data_folder, output)
 
 
 def print_compilation(output):
@@ -56,10 +66,12 @@ def print_task(identity, task_type, test_id, priority, fatal, dependencies, bina
         for dep in dependencies:
             output.write('          - {}\n'.format(dep))
 
+    if not binary:
+        binary = '***binary***'
     output.write('      cmd:\n')
     output.write('          bin: "{}"\n'.format(binary))
 
-    if args:
+    if args and len(args) > 0:
         output.write('          args:\n')
         for arg in args:
             output.write('              - "{}"\n'.format(arg))
@@ -109,6 +121,9 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
     if not test.out_file:
         test.out_file = "{}.stdout".format(test.number)
 
+    # parse config variables which can be hidden in test
+    parse_config_variables(test)
+
     # Fetch input
     if test.in_type == 'dir':
         # compute sha1 on input file and write it to configuration
@@ -147,7 +162,7 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
 
     # Evaluate test
     eval_task = "eval_task_{}".format(test.number)
-    print_task(eval_task, "execution", test.number, priority, False, [last_task], "***binary***", None, output)
+    print_task(eval_task, "execution", test.number, priority, False, [last_task], test.executable, test.cmd_args, output)
     print_sandbox(test, ext, output)
     priority += 1
 
@@ -163,7 +178,7 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
         # Filter outputs (clean comments)
         args = [test.out_file, "{}_filtered".format(test.out_file)]
         judge_filter = "judge_filter_{}".format(test.number)
-        print_task(judge_filter, "", test.number, priority, False, [fetch_output], "${JUDGES_DIR}/recodex-judge-filter", args, output)
+        print_task(judge_filter, "", test.number, priority, False, [fetch_output], test.out_filter, args, output)
         print_sandbox(test, ext, output, judge=True)
         priority += 1
 
@@ -178,7 +193,7 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
     # Judging results
     args = ["{}.out".format(test.number), judge_input_file]
     judge_results = "judge_test_{}".format(test.number)
-    print_task(judge_results, "evaluation", test.number, priority, False, judge_dependencies, "${JUDGES_DIR}/recodex-judge-normal", args, output)
+    print_task(judge_results, "evaluation", test.number, priority, False, judge_dependencies, test.judge, args, output)
     print_sandbox(test, ext, output, judge=True)
     priority += 1
 

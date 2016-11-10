@@ -25,6 +25,8 @@ class JobTest:
         self.judge = ''
         self.in_file = None
         self.out_file = None
+        self.executable = ''
+        self.cmd_args = []
 
     def __str__(self):
         output = "TEST {} -- points: {}, in_type: {}, out_type: {}, filter: {}, judge: {}"\
@@ -46,6 +48,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', type=str, nargs=1, required=True, help='input file with old config')
     parser.add_argument('-o', '--output', nargs=1, required=False, help='output file (default stdout)')
     parser.add_argument('-d', '--data', type=str, nargs=1, required=True, help='data folder with all test files')
+    parser.add_argument('-e', '--extension', type=str, nargs=1, help='extension of resulting source code', default='cs')
     args = parser.parse_args()
 
     if args.output:
@@ -71,8 +74,8 @@ if __name__ == '__main__':
         test.points = config['POINTS_PER_TEST']
         test.in_type = config['IN_TYPE']
         test.out_type = config['OUT_TYPE']
-        test.out_filter = config['OUTPUT_FILTER'].split(sep=' ')[0][4:]  # Remove bin/ prefix
-        test.judge = config['OUTPUT_CHECK'].split(sep=' ')[0][4:]  # Remove bin/ prefix
+        test.out_filter = config['OUTPUT_FILTER'].split(sep=' ')[0]
+        test.judge = config['OUTPUT_CHECK'].split(sep=' ')[0]
         test.limits['default'] = TestLimits()
         test.limits['default'].time_limit = config['TIME_LIMIT']
         test.limits['default'].mem_limit = config['MEM_LIMIT']
@@ -98,6 +101,17 @@ if __name__ == '__main__':
 
     # Extension based configs
     for config_key in config:
+        # Handle global execution command
+        m = re.search('EXT_([^_]*)_TEST_EXEC_CMD', config_key)
+        if m:
+            extension = m.group(1)
+            for test in tests:
+                exec_split = config[config_key].split(' ')
+                test.executable = exec_split[0]
+                if len(exec_split) > 1:
+                    test.cmd_args = exec_split[slice(1, len(exec_split))]
+
+
         # Handle global limits for extension
         m = re.search('EXT_([^_]*)_TIME_LIMIT', config_key)
         if m:
@@ -146,9 +160,51 @@ if __name__ == '__main__':
                     test.limits[extension].mem_limit = test.limits['default'].mem_limit
                 test.limits[extension].mem_limit = config[config_key]
 
+        # Handle test specific execution command
+        m = re.search('EXT_([^_]*)_TEST_([^_]*)_TEST_EXEC_CMD', config_key)
+        if m:
+            extension = m.group(1)
+            test_num = m.group(2)
+            for test in tests:
+                if test.number != test_num:
+                    continue
+                exec_split = config[config_key].split(' ')
+                test.executable = exec_split[0]
+                if len(exec_split) > 1:
+                    test.cmd_args = exec_split[slice(1, len(exec_split))]
+
+        # Handle test specific in and out types
+        m = re.search('EXT_([^_]*)_TEST_([^_]*)_OUT_TYPE', config_key)
+        if m:
+            extension = m.group(1)
+            test_num = m.group(2)
+            for test in tests:
+                if test.number != test_num:
+                    continue
+                test.out_type = config[config_key]
+
+        m = re.search('EXT_([^_]*)_TEST_([^_]*)_IN_TYPE', config_key)
+        if m:
+            extension = m.group(1)
+            test_num = m.group(2)
+            for test in tests:
+                if test.number != test_num:
+                    continue
+                test.in_type = config[config_key]
+
+        # Handle test specific judge
+        m = re.search('EXT_([^_]*)_TEST_([^_]*)_OUTPUT_CHECK', config_key)
+        if m:
+            extension = m.group(1)
+            test_num = m.group(2)
+            for test in tests:
+                if test.number != test_num:
+                    continue
+                test.judge = config[config_key].split(' ')[0]
+
     # Useful printing for testing :-)
     # for i in tests:
     #    print(i, file=out_stream)
 
     # Print yaml
-    print_yml.print_job(tests, args.data[0], out_stream)
+    print_yml.print_job(tests, args.data[0], out_stream, args.extension[0])

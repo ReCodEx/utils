@@ -24,7 +24,7 @@ if __name__ == "__main__":
                 open(path, "rb")
             )
 
-    tasks_url = "http://{address}:{port}/tasks".format(
+    tasks_url = "http://{address}:{port}/exercises".format(
         address = args.address,
         port = args.port
     )

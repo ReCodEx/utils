@@ -43,7 +43,7 @@ def print_header(output):
     output.write('submission:\n')
     output.write('    job-id: ***identification***\n')
     output.write('    language: ***language***\n')
-    output.write('    file-collector: http://localhost:9999/tasks\n')
+    output.write('    file-collector: http://localhost:9999/exercises\n')
     output.write('    log: true\n')
     output.write('    hw-groups:\n')
     output.write('        - group1\n')

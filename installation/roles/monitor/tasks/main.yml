@@ -8,7 +8,7 @@
   command: python3 setup.py bdist_rpm --post-install ./monitor/install/postinst chdir={{ source_dir }}/monitor
 
 - name: install monitor binary
-  yum: name={{ source_dir }}/monitor/dist/recodex-monitor-0.2.0-1.noarch.rpm state=present
+  yum: name={{ source_dir }}/monitor/dist/recodex-monitor-1.0.0-1.noarch.rpm state=present
 
 - name: configure monitor
   template: src="config.yml.j2" dest="/etc/recodex/monitor/config.yml" owner=recodex

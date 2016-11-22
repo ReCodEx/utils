@@ -1,5 +1,5 @@
 - name: install uwsgi dependencies
-  yum: name=uwsgi,uwsgi-router-static,uwsgi-router-rewrite,uwsgi-plugin-python3 state=latest disable_gpg_check=yes
+  yum: name=uwsgi,uwsgi-router-static,uwsgi-router-rewrite,uwsgi-plugin-python3 state=latest
 
 - name: clone fileserver repository
   git: repo=https://github.com/ReCodEx/fileserver.git dest={{ source_dir }}/fileserver
@@ -11,7 +11,7 @@
   file: path=/var/recodex-fileserver state=directory mode=0777
 
 - name: install python dependency for htpasswd module
-  yum: name=python-passlib state=latest disable_gpg_check=yes
+  yum: name=python-passlib state=latest
 
 - name: create htpasswd file with fileserver credentials
   htpasswd: path=/etc/httpd/recodex_htpasswd name="{{ fileserver_username }}" password="{{ fileserver_password }}" create=yes state=present

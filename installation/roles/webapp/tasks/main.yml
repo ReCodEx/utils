@@ -2,7 +2,7 @@
   command: sh -c "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -"
 
 - name: make sure NodeJS server is installed
-  yum: name=nodejs state=latest disable_gpg_check=yes
+  yum: name=nodejs,libpng12 state=latest
 
 - name: clone Web App repository
   git: repo=https://github.com/ReCodEx/web-app.git dest={{ source_dir }}/webapp

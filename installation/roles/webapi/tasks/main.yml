@@ -2,13 +2,13 @@
   yum: name=zeromq,zeromq-devel state=latest
 
 - name: install Remi repository for new PHP version
-  yum: name=http://rpms.remirepo.net/enterprise/remi-release-7.rpm state=present disable_gpg_check=yes
+  yum: name=http://rpms.remirepo.net/enterprise/remi-release-7.rpm state=present
 
 - name: enable the repository
   command: yum-config-manager --enable remi-php70
 
 - name: make sure PHP and composer are installed
-  yum: name=php,php-mysqlnd,php-pecl-zmq,composer state=latest disable_gpg_check=yes
+  yum: name=php,php-mysqlnd,php-pecl-zmq,php-ldap,composer state=latest
 
 - name: clone api repository
   git: repo=https://github.com/ReCodEx/api.git dest={{ source_dir }}/webapi

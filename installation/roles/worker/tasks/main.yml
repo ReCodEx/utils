@@ -14,7 +14,7 @@
   make: chdir={{ source_dir }}/worker/build/ target=package params=NUM_THREADS=4
 
 - name: install worker package
-  yum: name={{ source_dir }}/worker/build/recodex-worker-0.1.2-1-x86_64.rpm state=present
+  yum: name={{ source_dir }}/worker/build/recodex-worker-1.0.0-1-x86_64.rpm state=present
 
 - name: configure worker instance
   template: src="config.yml.j2" dest="/etc/recodex/worker/config-1.yml" owner=recodex

@@ -4,6 +4,9 @@
     description: EPEL YUM repo
     baseurl: http://download.fedoraproject.org/pub/epel/$releasever/$basearch/
 
+- name: add EPEL gpg key
+  command: sh -c "curl https://getfedora.org/static/352C64E5.txt > /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7 && rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7"
+
 - name: make sure git is installed
   yum: name=git state=latest
 

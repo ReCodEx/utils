@@ -36,7 +36,7 @@ def print_job(tests, data_folder, output, ext="cs"):
 
 def print_compilation(output):
     print_task("compilation", "", "", 1, True, None, "***compilation***", ["***arg1***", "***arg2***"], output)
-    print_sandbox(None, "", output, False, False)
+    print_general_sandbox(output)
 
 
 def print_header(output):
@@ -77,32 +77,48 @@ def print_task(identity, task_type, test_id, priority, fatal, dependencies, bina
             output.write('              - "{}"\n'.format(arg))
 
 
-def print_sandbox(test, ext, output=sys.stdout, judge=False, with_limits=True):
+def print_execution_sandbox(test, ext, output=sys.stdout):
+    if ext in test.limits:
+        # There are extension specific values
+        time = test.limits[ext].time_limit
+        memory = test.limits[ext].mem_limit
+    else:
+        # Use test 'default' values
+        time = test.limits['default'].time_limit
+        memory = test.limits['default'].mem_limit
+
+    in_file = None
+    out_file = None
+    if test is not None and test.in_type == "stdio":
+        in_file = test.in_file
+    if test is not None and test.out_type == "stdio":
+        out_file = test.out_file
+
+    print_general_sandbox(output, time, memory, in_file, out_file)
+
+
+def print_judge_sandbox(output=sys.stdout):
+    # Set reasonable defaults for judges
+    print_general_sandbox(output, '2.0', '16384')
+
+
+def print_general_sandbox(output=sys.stdout, time=None, memory=None, redir_stdin=None, redir_stdout=None):
     output.write('      sandbox:\n')
     output.write('          name: "isolate"\n')
-    if test is not None and test.in_type == "stdio":
-        output.write('          stdin: ${{EVAL_DIR}}/{}\n'.format(test.in_file))
-    if test is not None and test.out_type == "stdio":
-        output.write('          stdout: ${{EVAL_DIR}}/{}\n'.format(test.out_file))
+    if redir_stdin:
+        output.write('          stdin: ${{EVAL_DIR}}/{}\n'.format(redir_stdin))
+    if redir_stdout:
+        output.write('          stdout: ${{EVAL_DIR}}/{}\n'.format(redir_stdout))
+    print_sandbox_limits(output, time, memory)
+
+
+def print_sandbox_limits(output=sys.stdout, time=None, memory=None):
     output.write('          limits:\n')
     output.write('              - hw-group-id: group1\n')
 
-    if with_limits:
-        if judge:
-            # Set reasonable defaults for judges
-            time = '2.0'
-            memory = '16384'
-        elif ext in test.limits:
-            # There are extension specific values
-            time = test.limits[ext].time_limit
-            memory = test.limits[ext].mem_limit
-        else:
-            # Use test 'default' values
-            time = test.limits['default'].time_limit
-            memory = test.limits['default'].mem_limit
-
-    if with_limits:
-        output.write('                time: {}\n'. format(time))
+    if time:
+        output.write('                time: {}\n'.format(time))
+    if memory:
         output.write('                memory: {}\n'.format(memory))
     output.write('                chdir: ${EVAL_DIR}\n')
     output.write('                environ-variable:\n')
@@ -163,7 +179,7 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
     # Evaluate test
     eval_task = "eval_task_{}".format(test.number)
     print_task(eval_task, "execution", test.number, priority, False, [last_task], test.executable, test.cmd_args, output)
-    print_sandbox(test, ext, output)
+    print_execution_sandbox(test, ext, output)
     priority += 1
 
     # Fetch sample output
@@ -179,7 +195,7 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
         args = [test.out_file, "{}_filtered".format(test.out_file)]
         judge_filter = "judge_filter_{}".format(test.number)
         print_task(judge_filter, "", test.number, priority, False, [fetch_output], test.out_filter, args, output)
-        print_sandbox(test, ext, output, judge=True)
+        print_judge_sandbox(output)
         priority += 1
 
     # Prepare for judging
@@ -194,7 +210,7 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
     args = ["{}.out".format(test.number), judge_input_file]
     judge_results = "judge_test_{}".format(test.number)
     print_task(judge_results, "evaluation", test.number, priority, False, judge_dependencies, test.judge, args, output)
-    print_sandbox(test, ext, output, judge=True)
+    print_judge_sandbox(output)
     priority += 1
 
     # Remove junk

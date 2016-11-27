@@ -6,4 +6,5 @@ CMakeLists.txt.user
 doc/
 build/
 installation/virtual_*
+.idea/
 

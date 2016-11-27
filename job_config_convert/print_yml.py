@@ -35,7 +35,7 @@ def print_job(tests, data_folder, output, ext="cs"):
 
 
 def print_compilation(output):
-    print_task("compilation", "", "", 1, True, None, "***compilation***", ["***arg1***", "***arg2***"], output)
+    print_task("compilation", "initiation", "", 1, True, None, "***compilation***", ["***arg1***", "***arg2***"], output)
     print_general_sandbox(output)
 
 

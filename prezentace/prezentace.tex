@@ -1,0 +1,128 @@
+\documentclass{beamer}
+
+\usetheme{CambridgeUS}
+%\usetheme{Luebeck}
+\usecolortheme{beaver}
+\useinnertheme{rectangles}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{listings}
+\lstset{
+    breaklines=true,
+    xleftmargin=\parindent,
+    language=C++,
+    showstringspaces=false,
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\color[rgb]{0,0,1},
+    commentstyle=\color[rgb]{0.026,0.112,0.095},
+    %identifierstyle=\color{blue},
+    stringstyle=\color[rgb]{0.627,0.126,0.941},
+}
+
+\begin{document}
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+
+\title[ReCodEx -- ReCodEx Code Examiner] % (optional, only for long titles)
+{ReCodEx -- ReCodEx Code Examiner}
+\author[Buchar, Polanka, Rozsíval, Stefan]{J. Buchar, M. Polanka, Š. Rozsíval, P. Stefan}
+\institute[] % (optional)
+{
+  Matematicko-fyzikální fakulta\\
+  Univerzita Karlova v Praze
+}
+\date[3. 12. 2016]{} % (optional)
+\subject{Computer Science}
+%\logo{\includegraphics[width=0.2\textwidth]{images/logo_recodex.png}}
+\titlegraphic{\includegraphics[width=0.5\textwidth]{images/logo_recodex.png}}
+
+\frame{\titlepage}
+
+\section{ReCodEx}
+
+\begin{frame}
+	\frametitle{Úvod}
+	\begin{itemize}
+		\item Motivace
+		\item Stávající řešení na MFF UK
+		\item Cíle
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Praktická ukázka}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Architektura}
+	\begin{itemize}
+		\item Nezávislé komponenty, které spolu komunikují
+		\item Backend zajišťuje vyhodnocování úloh
+		\item REST API zpracovává a ukládá data
+		\item Webová aplikace zpřístupňuje data uživatelům
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Komponenty a komunikace}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{images/communication.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Webová aplikace}
+	\begin{itemize}
+		\item SPA (single-page application)
+		\item ECMAScript a HTML5
+		\item knihovna React, framework Redux, \dots
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{REST API}
+	\begin{itemize}
+		\item PHP 7
+		\item framework Nette s rozšířeními, ZeroMQ nadstavba pro PHP
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Fileserver}
+	\begin{itemize}
+		\item Python 3
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Broker}
+	\begin{itemize}
+		\item C++11
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Worker}
+	\begin{itemize}
+		\item C++11
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Monitor}
+	\begin{itemize}
+		\item Python 3
+	\end{itemize}
+\end{frame}
+
+\section{Závěr}
+\begin{frame}
+	\frametitle{Závěr}
+	\centering
+	Děkujeme za pozornost.\\
+	\LARGE{Otázky?}
+\end{frame}
+
+\end{document}

@@ -75,46 +75,105 @@
 \begin{frame}
 	\frametitle{Webová aplikace}
 	\begin{itemize}
+		\item ovládání systému uživateli
 		\item SPA (single-page application)
 		\item ECMAScript a HTML5
 		\item knihovna React, framework Redux, \dots
+		\item NodeJS server
 	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Webová aplikace II}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{images/communication-webapp.png}
+	\end{center}
 \end{frame}
 
 \begin{frame}
 	\frametitle{REST API}
 	\begin{itemize}
+		\item hlavní logika aplikace, ukládání dat
 		\item PHP 7
-		\item framework Nette s rozšířeními, ZeroMQ nadstavba pro PHP
+		\item framework Nette, Doctrine, ZeroMQ nadstavba pro PHP, \dots
+		\item Apache server s \it{mod\_php}
+		\item MySQL databáze (MariaDB)
 	\end{itemize}
 \end{frame}
 
 \begin{frame}
-	\frametitle{Fileserver}
-	\begin{itemize}
-		\item Python 3
-	\end{itemize}
+	\frametitle{REST API II}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{images/communication-webapi.png}
+	\end{center}
 \end{frame}
 
 \begin{frame}
 	\frametitle{Broker}
 	\begin{itemize}
+		\item rozdělování práce mezi workery
 		\item C++11
+		\item ZeroMQ, libcurl, \dots
+		\item \texttt{systemd} proces
 	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Broker II}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{images/communication-broker.png}
+	\end{center}
 \end{frame}
 
 \begin{frame}
 	\frametitle{Worker}
 	\begin{itemize}
+		\item bezpečné zpracování a vyhodnocení úlohy
 		\item C++11
+		\item ZeroMQ, libcurl, libarchive, \dots
+		\item \texttt{systemd} proces
 	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Worker II}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{images/communication-worker.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Fileserver}
+	\begin{itemize}
+		\item skladování pomocných souborů k úlohám a studentských řešení
+		\item Python 3
+		\item Flask, \dots
+		\item uWSGI aplikace
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Fileserver II}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{images/communication-fileserver.png}
+	\end{center}
 \end{frame}
 
 \begin{frame}
 	\frametitle{Monitor}
 	\begin{itemize}
+		\item hlášení postupu vyhodnocení uživatelům
 		\item Python 3
+		\item ZeroMQ nadstavba pro Python, websockets, asyncio, \dots
+		\item \texttt{systemd} proces
 	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Monitor II}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{images/communication-monitor.png}
+	\end{center}
 \end{frame}
 
 \section{Závěr}

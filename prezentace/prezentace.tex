@@ -72,10 +72,14 @@
 \begin{frame}
 	\frametitle{Architektura}
 	\begin{itemize}
-		\item Nezávislé komponenty, které spolu komunikují
-		\item Backend zajišťuje vyhodnocování úloh
-		\item REST API zpracovává a ukládá data
-		\item Webová aplikace zpřístupňuje data uživatelům
+		\item Nezávislé komponenty, které spolu komunikují po síti
+		\item Backend zajišťuje bezpečné vyhodnocování úloh
+		\item REST API 
+			\begin{itemize}
+				\item uchovává a poskytuje data
+				\item zprostředkovává vyhodnocení úloh
+			\end{itemize}
+		\item Webová aplikace je výchozí uživatelské rozhraní pro REST API
 	\end{itemize}
 \end{frame}
 
@@ -92,7 +96,7 @@
 		\item ovládání systému uživateli
 		\item SPA (single-page application)
 		\item ECMAScript a HTML5
-		\item knihovna React, framework Redux, \dots
+		\item založena na React/Redux
 		\item NodeJS server
 	\end{itemize}
 \end{frame}
@@ -107,9 +111,9 @@
 \begin{frame}
 	\frametitle{REST API}
 	\begin{itemize}
-		\item hlavní logika aplikace, ukládání dat
+		\item hlavní logika aplikace, ukládání dat, komunikace s backendem
 		\item PHP 7
-		\item framework Nette, Doctrine, ZeroMQ nadstavba pro PHP, \dots
+		\item Nette web framework, Doctrine ORM, ZeroMQ messaging, \dots
 		\item Apache server s {\it mod\_php}
 		\item MySQL databáze (MariaDB)
 	\end{itemize}
@@ -126,9 +130,14 @@
 	\frametitle{Broker}
 	\begin{itemize}
 		\item rozdělování práce mezi workery
+			\begin{itemize}
+				\item fronta úloh
+				\item load balancing podle různých kritérií (hardware, dostupná běhová prostředí, \dots)
+				\item monitorování stavu
+			\end{itemize}
 		\item C++11
 		\item ZeroMQ, libcurl, \dots
-		\item \texttt{systemd} proces
+		\item \texttt{systemd} služba
 	\end{itemize}
 \end{frame}
 
@@ -142,10 +151,14 @@
 \begin{frame}
 	\frametitle{Worker}
 	\begin{itemize}
-		\item bezpečné zpracování a vyhodnocení úlohy
+		\item bezpečné zpracování a vyhodnocení úlohy (sandbox isolate)
+			\begin{itemize}
+				\item založeno na Linux kernel namespaces a CGroups
+				\item umožňuje přesné měření času
+			\end{itemize}
 		\item C++11
 		\item ZeroMQ, libcurl, libarchive, \dots
-		\item \texttt{systemd} proces
+		\item \texttt{systemd} služba
 	\end{itemize}
 \end{frame}
 
@@ -159,10 +172,14 @@
 \begin{frame}
 	\frametitle{Fileserver}
 	\begin{itemize}
-		\item skladování pomocných souborů k úlohám a studentských řešení
-		\item Python 3
-		\item Flask, \dots
-		\item uWSGI aplikace
+		\item skladování pomocných souborů k úlohám
+			\begin{itemize}
+				\item hash obsahu jako jméno souboru $\rightarrow$ odstranění duplicitních souborů
+			\end{itemize}
+		\item ukládání studentských řešení a výsledků vyhodnocení
+		\item oddělení od REST API $\rightarrow$ více instancí API může sdílet úložiště (load~balancing, \dots)
+		\item Python 3 a webový framework Flask
+		\item WSGI aplikace nasazená na Apache s mod\_proxy a uWSGI
 	\end{itemize}
 \end{frame}
 
@@ -176,7 +193,8 @@
 \begin{frame}
 	\frametitle{Monitor}
 	\begin{itemize}
-		\item hlášení postupu vyhodnocení uživatelům
+		\item hlášení postupu vyhodnocení webové aplikaci
+		\item umožňuje zobrazení výsledků bez aktivního čekání
 		\item Python 3
 		\item ZeroMQ nadstavba pro Python, websockets, asyncio, \dots
 		\item \texttt{systemd} proces
@@ -196,7 +214,7 @@
 		\item návrh a implementace nového vyhodnocovacího systému
 		\item zapracování požadavků MFF UK
 		\item moderní technologie, rozšiřitelnost, bezpečnost
-		\item testování
+		\item automatizované testování
 		\item plné nasazení v příštím akademickém roce
 	\end{itemize}
 \end{frame}

@@ -209,6 +209,24 @@
 \end{frame}
 
 \begin{frame}
+	\frametitle{Scénář - vyhodnocení úlohy}
+	\begin{itemize}
+		\item Student odevzdá řešení we webové aplikaci, která volá REST API (HTTP)
+		\item API nahraje odevzdané soubory (a instrukce k vyhodnocení) na fileserver (HTTP) a pošle žádost o vyhodnocení brokeru (ZeroMQ)
+		\item Broker vybere vhodný worker a úlohu mu pošle (případně zařadí do fronty) (ZeroMQ)
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Scénář - vyhodnocení úlohy II}
+	\begin{itemize}
+		\item Worker stáhne odevzdané soubory z file serveru (HTTP) a vyhodnotí úlohu
+		\item Zprávy o průběhu vyhodnocování se předávají skrze broker monitoru (ZeroMQ), odkud je lze číst skrze WebSocket
+		\item Výsledky vyhodnocení se nahrají na fileserver (HTTP) a brokeru se pošle zpráva o konci vyhodnocení (ZeroMQ)
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
 	\frametitle{Hodnocení}
 	\begin{itemize}
 		\item návrh a implementace nového vyhodnocovacího systému

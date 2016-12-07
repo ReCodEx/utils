@@ -43,25 +43,13 @@
 \section{ReCodEx}
 
 \begin{frame}
-	\frametitle{Osnova}
-	\begin{itemize}
-		\item Co je to ReCodEx?
-		\item Praktická ukázka
-		\item Architektura
-		\begin{itemize}
-			\item Komponenty
-			\item Komunikace
-		\end{itemize}
-	\end{itemize}
-\end{frame}
-
-\begin{frame}
 	\frametitle{Motivace}
 	\begin{itemize}
 		\item Zastaralý frontend CodExu
 		\item Sandbox nepodporuje paralelní programy
 		\item Omezená vyhodnocovací pipeline (kompilace/spuštění/vyhodnocení)
 		\item Pevně svázané komponenty CodExu
+		\item Nutnost separátních instancí pro různé programovací jazyky
 	\end{itemize}
 \end{frame}
 
@@ -73,13 +61,13 @@
 	\frametitle{Architektura}
 	\begin{itemize}
 		\item Nezávislé komponenty, které spolu komunikují po síti
-		\item Backend zajišťuje bezpečné vyhodnocování úloh
+		\item Webová aplikace je výchozí uživatelské rozhraní pro REST API
 		\item REST API 
 			\begin{itemize}
 				\item uchovává a poskytuje data
 				\item zprostředkovává vyhodnocení úloh
 			\end{itemize}
-		\item Webová aplikace je výchozí uživatelské rozhraní pro REST API
+		\item Backend zajišťuje bezpečné vyhodnocování úloh
 	\end{itemize}
 \end{frame}
 
@@ -92,48 +80,43 @@
 
 \begin{frame}
 	\frametitle{Webová aplikace}
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{images/communication-webapp.png}
+	\end{center}
 	\begin{itemize}
 		\item ovládání systému uživateli
 		\item SPA (single-page application)
 		\item ECMAScript a HTML5
 		\item založena na React/Redux
-		\item NodeJS server
+		\item NodeJS server -- lepší výkon kvůli předrenderování na serveru
 	\end{itemize}
 \end{frame}
 
 \begin{frame}
-	\frametitle{Webová aplikace II}
-	\begin{center}
-		\includegraphics[width=0.8\textwidth]{images/communication-webapp.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}
 	\frametitle{REST API}
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{images/communication-webapi.png}
+	\end{center}
 	\begin{itemize}
 		\item hlavní logika aplikace, ukládání dat, komunikace s backendem
 		\item PHP 7
 		\item Nette web framework, Doctrine ORM, ZeroMQ messaging, \dots
 		\item Apache server s {\it mod\_php}
 		\item MySQL databáze (MariaDB)
+		\item Autentizace -- lokální, CAS
 	\end{itemize}
 \end{frame}
 
 \begin{frame}
-	\frametitle{REST API II}
-	\begin{center}
-		\includegraphics[width=0.8\textwidth]{images/communication-webapi.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}
 	\frametitle{Broker}
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{images/communication-broker.png}
+	\end{center}
 	\begin{itemize}
-		\item rozdělování práce mezi workery
+		\item rozdělování práce mezi více workerů (potenciálně s různým prostředím)
 			\begin{itemize}
 				\item fronta úloh
-				\item load balancing podle různých kritérií (hardware, dostupná běhová prostředí, \dots)
-				\item monitorování stavu
+				\item load balancing podle různých kritérií (hardware, běhová prostředí, \dots)
 			\end{itemize}
 		\item C++11
 		\item ZeroMQ, libcurl, \dots
@@ -142,19 +125,15 @@
 \end{frame}
 
 \begin{frame}
-	\frametitle{Broker II}
-	\begin{center}
-		\includegraphics[width=0.8\textwidth]{images/communication-broker.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}
 	\frametitle{Worker}
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{images/communication-worker.png}
+	\end{center}
 	\begin{itemize}
 		\item bezpečné zpracování a vyhodnocení úlohy (sandbox isolate)
 			\begin{itemize}
 				\item založeno na Linux kernel namespaces a CGroups
-				\item umožňuje přesné měření času
+				\item umožňuje rozumně přesné měření času a paměti
 			\end{itemize}
 		\item C++11
 		\item ZeroMQ, libcurl, libarchive, \dots
@@ -163,14 +142,20 @@
 \end{frame}
 
 \begin{frame}
-	\frametitle{Worker II}
-	\begin{center}
-		\includegraphics[width=0.8\textwidth]{images/communication-worker.png}
-	\end{center}
+	\frametitle{Konfigurace úlohy}
+	\begin{itemize}
+		\item velmi přizpůsobitelná různým druhům použití
+		\item strukturovaná textová reprezentace (YAML)
+		\item jednoduché tasky spojené závislostmi
+		\item \textit{interní} a \textit{externí} tasky
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
 	\frametitle{Fileserver}
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{images/communication-fileserver.png}
+	\end{center}
 	\begin{itemize}
 		\item skladování pomocných souborů k úlohám
 			\begin{itemize}
@@ -184,14 +169,10 @@
 \end{frame}
 
 \begin{frame}
-	\frametitle{Fileserver II}
-	\begin{center}
-		\includegraphics[width=0.8\textwidth]{images/communication-fileserver.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}
 	\frametitle{Monitor}
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{images/communication-monitor.png}
+	\end{center}
 	\begin{itemize}
 		\item hlášení postupu vyhodnocení webové aplikaci
 		\item umožňuje zobrazení výsledků bez aktivního čekání
@@ -202,32 +183,14 @@
 \end{frame}
 
 \begin{frame}
-	\frametitle{Monitor II}
+	\frametitle{Scénář -- vyhodnocení úlohy}
 	\begin{center}
-		\includegraphics[width=0.8\textwidth]{images/communication-monitor.png}
+		\includegraphics[width=0.8\textwidth]{images/communication.png}
 	\end{center}
 \end{frame}
 
 \begin{frame}
-	\frametitle{Scénář - vyhodnocení úlohy}
-	\begin{itemize}
-		\item Student odevzdá řešení we webové aplikaci, která volá REST API (HTTP)
-		\item API nahraje odevzdané soubory (a instrukce k vyhodnocení) na fileserver (HTTP) a pošle žádost o vyhodnocení brokeru (ZeroMQ)
-		\item Broker vybere vhodný worker a úlohu mu pošle (případně zařadí do fronty) (ZeroMQ)
-	\end{itemize}
-\end{frame}
-
-\begin{frame}
-	\frametitle{Scénář - vyhodnocení úlohy II}
-	\begin{itemize}
-		\item Worker stáhne odevzdané soubory z file serveru (HTTP) a vyhodnotí úlohu
-		\item Zprávy o průběhu vyhodnocování se předávají skrze broker monitoru (ZeroMQ), odkud je lze číst skrze WebSocket
-		\item Výsledky vyhodnocení se nahrají na fileserver (HTTP) a brokeru se pošle zpráva o konci vyhodnocení (ZeroMQ)
-	\end{itemize}
-\end{frame}
-
-\begin{frame}
-	\frametitle{Hodnocení}
+	\frametitle{Shrnutí}
 	\begin{itemize}
 		\item návrh a implementace nového vyhodnocovacího systému
 		\item zapracování požadavků MFF UK
@@ -237,12 +200,20 @@
 	\end{itemize}
 \end{frame}
 
+\begin{frame}
+	\frametitle{Náměty k vylepšení}
+	\begin{itemize}
+		\item ovládací prvky ve webové aplikaci na základě zpětné vazby uživatelů
+		\item formuláře pro přidání a zadávání úloh
+		\item přehlednější hlášení chybových stavů
+	\end{itemize}
+\end{frame}
+
 \section{Závěr}
 \begin{frame}
 	\frametitle{Závěr}
 	\centering
-	Děkujeme za pozornost.\\
-	\LARGE{Otázky?}
+	\LARGE{Děkujeme za pozornost}
 \end{frame}
 
 \end{document}

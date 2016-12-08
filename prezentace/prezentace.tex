@@ -113,10 +113,11 @@
 		\includegraphics[width=0.6\textwidth]{images/communication-broker.png}
 	\end{center}
 	\begin{itemize}
-		\item rozdělování práce mezi více workerů (potenciálně s různým prostředím)
+		\item rozdělování práce mezi více workerů
 			\begin{itemize}
-				\item fronta úloh
-				\item load balancing podle různých kritérií (hardware, běhová prostředí, \dots)
+				\item workeři se mohou lišit (hardware, běhová prostředí, \dots) 
+					-- rozdělování úloh podle kritérií, load balancing
+				\item fault tolerance -- přerozdělování úloh při pádu workera
 			\end{itemize}
 		\item C++11
 		\item ZeroMQ, libcurl, \dots
@@ -135,6 +136,7 @@
 				\item založeno na Linux kernel namespaces a CGroups
 				\item umožňuje rozumně přesné měření času a paměti
 			\end{itemize}
+		\item podpora Windows je možná (existuje prototyp)
 		\item C++11
 		\item ZeroMQ, libcurl, libarchive, \dots
 		\item \texttt{systemd} služba
@@ -146,7 +148,7 @@
 	\begin{itemize}
 		\item velmi přizpůsobitelná různým druhům použití
 		\item strukturovaná textová reprezentace (YAML)
-		\item jednoduché tasky spojené závislostmi
+		\item jednoduché tasky (fetch url, decompress, \dots) spojené závislostmi
 		\item \textit{interní} a \textit{externí} tasky
 	\end{itemize}
 \end{frame}
@@ -157,11 +159,11 @@
 		\includegraphics[width=0.6\textwidth]{images/communication-fileserver.png}
 	\end{center}
 	\begin{itemize}
+		\item ukládání studentských řešení a výsledků vyhodnocení
 		\item skladování pomocných souborů k úlohám
 			\begin{itemize}
-				\item hash obsahu jako jméno souboru $\rightarrow$ odstranění duplicitních souborů
+				\item hash obsahu jako jméno souboru $\rightarrow$ částečné odstranění duplicit
 			\end{itemize}
-		\item ukládání studentských řešení a výsledků vyhodnocení
 		\item oddělení od REST API $\rightarrow$ více instancí API může sdílet úložiště (load~balancing, \dots)
 		\item Python 3 a webový framework Flask
 		\item WSGI aplikace nasazená na Apache s {\it mod\_proxy} a uWSGI

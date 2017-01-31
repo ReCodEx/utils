@@ -1,7 +1,8 @@
 %define name isolate
 %define version 1.3
-%define release 1
-%define boxdir %{_sharedstatedir}/%{name}
+%define release 2
+# %define boxdir %{_sharedstatedir}/%{name}
+%define boxdir /var/local/lib/%{name}
 %define confdir %{_sysconfdir}/%{name}
 %define conffile %{confdir}/default.cf
 
@@ -29,9 +30,8 @@ and control groups.
 %make_build BINDIR=%{_bindir} CONFIG=%{conffile}
 
 %install
-%make_install BINDIR=%{buildroot}/%{_bindir} CONFIG=%{buildroot}/%{conffile}
+%make_install BINDIR=%{buildroot}/%{_bindir} CONFIG=%{buildroot}/%{conffile} BOXDIR=%{buildroot}/%{boxdir}
 make install-doc MANDIR=%{buildroot}/%{_mandir}
-mkdir -p %{buildroot}/%{boxdir}
 
 %clean
 make clean

@@ -99,16 +99,18 @@ def print_execution_sandbox(test, ext, output=sys.stdout):
 
 def print_judge_sandbox(output=sys.stdout):
     # Set reasonable defaults for judges
-    print_general_sandbox(output, '2.0', '16384')
+    print_general_sandbox(output, '2.0', '16384', None, None, True)
 
 
-def print_general_sandbox(output=sys.stdout, time=None, memory=None, redir_stdin=None, redir_stdout=None):
+def print_general_sandbox(output=sys.stdout, time=None, memory=None, redir_stdin=None, redir_stdout=None, resultOutput=None):
     output.write('      sandbox:\n')
     output.write('          name: "isolate"\n')
     if redir_stdin:
         output.write('          stdin: ${{EVAL_DIR}}/{}\n'.format(redir_stdin))
     if redir_stdout:
         output.write('          stdout: ${{EVAL_DIR}}/{}\n'.format(redir_stdout))
+    if resultOutput:
+        output.write('          output: true\n')
     print_sandbox_limits(output, time, memory)
 
 
@@ -120,13 +122,8 @@ def print_sandbox_limits(output=sys.stdout, time=None, memory=None):
         output.write('                time: {}\n'.format(time))
     if memory:
         output.write('                memory: {}\n'.format(memory))
-    output.write('                chdir: ${EVAL_DIR}\n')
     output.write('                environ-variable:\n')
     output.write('                    PATH: "/usr/bin"\n')
-    output.write('                bound-directories:\n')
-    output.write('                    - src: ${SOURCE_DIR}\n')
-    output.write('                      dst: ${EVAL_DIR}\n')
-    output.write('                      mode: RW\n')
 
 
 def print_one_test(test, ext, data_folder, output=sys.stdout):
@@ -220,3 +217,4 @@ def print_one_test(test, ext, data_folder, output=sys.stdout):
         args.append("${{SOURCE_DIR}}/{}_filtered".format(test.out_file))
     remove_junk = "remove_junk_{}".format(test.number)
     print_task(remove_junk, "", test.number, priority, False, [judge_results], "rm", args, output)
+

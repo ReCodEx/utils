@@ -7,4 +7,5 @@ doc/
 build/
 installation/virtual_*
 .idea/
+*.pyc
 

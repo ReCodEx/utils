@@ -198,7 +198,7 @@ function stop_file_server {
 	if $START_FS; then
 		kill -s SIGINT ${FILE_SERVER_PID}
 		wait ${FILE_SERVER_PID} 2> /dev/null
-		rm ${TEMP_OUT}
+		#rm ${TEMP_OUT}
 		echo "File server stopped"
 	fi
 }
@@ -273,5 +273,5 @@ stop_worker
 stop_broker
 stop_file_server
 
-rm -rf ${TEMP_DIR}
+#rm -rf ${TEMP_DIR}
 

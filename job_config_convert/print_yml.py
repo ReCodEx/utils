@@ -23,6 +23,7 @@ def parse_config_variables(job_test):
 
     job_test.out_filter = job_test.out_filter.replace("bin/codex_filter", "${JUDGES_DIR}/recodex-judge-filter")
     job_test.judge = job_test.judge.replace("bin/codex_judge", "${JUDGES_DIR}/recodex-judge-normal")
+	job_test.judge = job_test.judge.replace("bin/codex_shufflejudge", "${JUDGES_DIR}/recodex-judge-shuffle")
     job_test.judge = job_test.judge.replace("diff", "/usr/bin/diff")
 
 
@@ -36,7 +37,7 @@ def print_job(tests, data_folder, output, ext="cs"):
 
 def print_compilation(output):
     print_task("compilation", "initiation", "", 1, True, None, "***compilation***", ["***arg1***", "***arg2***"], output)
-    print_general_sandbox(output)
+    print_general_sandbox(output, None, None, None, None, True)
 
 
 def print_header(output):
@@ -123,7 +124,6 @@ def print_sandbox_limits(output=sys.stdout, time=None, memory=None):
     if memory:
         output.write('                memory: {}\n'.format(memory))
     output.write('                environ-variable:\n')
-    output.write('                    PATH: "/usr/bin"\n')
 
 
 def print_one_test(test, ext, data_folder, output=sys.stdout):

@@ -23,7 +23,7 @@ def parse_config_variables(job_test):
 
     job_test.out_filter = job_test.out_filter.replace("bin/codex_filter", "${JUDGES_DIR}/recodex-judge-filter")
     job_test.judge = job_test.judge.replace("bin/codex_judge", "${JUDGES_DIR}/recodex-judge-normal")
-	job_test.judge = job_test.judge.replace("bin/codex_shufflejudge", "${JUDGES_DIR}/recodex-judge-shuffle")
+    job_test.judge = job_test.judge.replace("bin/codex_shufflejudge", "${JUDGES_DIR}/recodex-judge-shuffle")
     job_test.judge = job_test.judge.replace("diff", "/usr/bin/diff")
 
 

@@ -1,6 +1,6 @@
 %define name isolate
-%define version 1.3
-%define release 2
+%define version 1.4
+%define release 1
 # %define boxdir %{_sharedstatedir}/%{name}
 %define boxdir /var/local/lib/%{name}
 %define confdir %{_sysconfdir}/%{name}
@@ -15,7 +15,8 @@ License: GPLv2+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 Url: https://github.com/ioi/isolate
-BuildRequires: asciidoc
+BuildRequires: asciidoc libcap-devel
+Requires: libcap
 
 %description
 Isolate is a sandbox built to safely run untrusted executables, offering them a
@@ -30,7 +31,8 @@ and control groups.
 %make_build BINDIR=%{_bindir} CONFIG=%{conffile}
 
 %install
-%make_install BINDIR=%{buildroot}/%{_bindir} CONFIG=%{buildroot}/%{conffile} BOXDIR=%{buildroot}/%{boxdir}
+mkdir -p %{buildroot}%{_bindir}
+%make_install BINDIR=%{buildroot}%{_bindir} CONFIG=%{buildroot}%{conffile} BOXDIR=%{buildroot}%{boxdir}
 make install-doc MANDIR=%{buildroot}/%{_mandir}
 
 %clean
@@ -50,6 +52,7 @@ make clean
 %dir %{boxdir}
 
 %{_bindir}/%{name}
+%{_bindir}/isolate-check-environment
 %config(noreplace) %{conffile}
 %{_mandir}/man1/%{name}.1.gz
 

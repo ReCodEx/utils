@@ -1,5 +1,5 @@
 %define name isolate
-%define version 1.4
+%define version 1.4.1
 %define release 1
 # %define boxdir %{_sharedstatedir}/%{name}
 %define boxdir /var/local/lib/%{name}
@@ -31,7 +31,7 @@ and control groups.
 %make_build BINDIR=%{_bindir} CONFIG=%{conffile}
 
 %install
-mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{confdir} %{buildroot}%{boxdir}
 %make_install BINDIR=%{buildroot}%{_bindir} CONFIG=%{buildroot}%{conffile} BOXDIR=%{buildroot}%{boxdir}
 make install-doc MANDIR=%{buildroot}/%{_mandir}
 

@@ -4,7 +4,8 @@ import groovy.io.FileType
 import java.lang.reflect.*
 
 void help(stream) {
-	stream.println("Sorry")
+	stream.println("./javarun.groovy scan - print a list of classes found in current directory (and subdirectories) that contain a main() method")
+	stream.println("./javarun.groovy run - run the first main() method found in current directory (and subdirectories)")
 }
 
 String getClassName(File file) {
@@ -55,9 +56,7 @@ if (command.equals("scan")) {
 	scanDir(new File(".")).each {
 		println it.getName()
 	}
-}
-
-if (command.equals("run")) {
+} else if (command.equals("run")) {
 	String stdin = System.getProperty("codex.stdin");
 	if (stdin != null) {
 		System.setIn(new FileInputStream(stdin));
@@ -111,4 +110,7 @@ if (command.equals("run")) {
 	} catch (Throwable ex) {
 		System.exit(1)
 	}
+} else {
+	help(System.err)
+	System.exit(1)
 }

@@ -7,6 +7,13 @@ from pathlib import Path
 from html2text import html2text
 
 DEFAULT_LOCALE = "cs"
+EXTENSION_RUNTIME_ENV_MAP = {
+    "cs": "mono46",
+    "c": "c-gcc-linux",
+    "pas": "freepascal-linux",
+    "java": "java8",
+    "cpp": "cxx11-gcc-linux"
+}
 
 def load_content(exercise_folder):
     content = (Path(exercise_folder) / "content.xml").read_bytes()
@@ -56,8 +63,16 @@ def replace_file_references(text, url_map):
     return re.sub(r'\(\$DIR/(.*)\)', replace, text)
 
 
-def load_reference_solutions(content_soup, exercise_folder):
-    pass
+def load_reference_solution_details(content_soup):
+    for solution in content_soup.select("solution"):
+        yield solution["id"], {
+            "note": solution.find("comment").get_text(),
+            "runtimeEnvironmentId": EXTENSION_RUNTIME_ENV_MAP[solution.find("extension").get_text()]
+        }
+
+def load_reference_solution_file(solution_id, content_soup, exercise_folder):
+    extension = content_soup.select("solution[id={}] extension".format(solution_id)).get_text()
+    return Path(exercise_folder) / solutions / solution_id / "source.{}".format(extension)
 
 def load_exercise_files(exercise_folder):
     path = Path(exercise_folder) / "testdata"
@@ -147,7 +162,14 @@ def run(api_url, api_token, exercise_folder):
     logging.info("Uploaded exercise files associated with the exercise")
 
     # Upload reference solutions
-    # TODO
+    for solution_id, solution in load_reference_solution_details(content_soup):
+        path = load_reference_solution_file(solution_id, content_soup, exercise_folder)
+        solution["files[0]"] = upload_file(session, request_template.prepare(), path)
+        solution_request = request_template.prepare()
+        solution_request.url += '/reference-solutions/exercise/{}'.format(exercise_id)
+        solution_request.files = solution
+        payload = extract_payload(session.send(solution_request))
+        logging.info("New reference solution created, with id %s", payload["id"])
 
     # Configure tests
     # TODO

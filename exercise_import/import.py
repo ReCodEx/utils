@@ -2,22 +2,36 @@ import click
 import requests
 import re
 import logging
+import yaml
 from bs4 import BeautifulSoup
 from pathlib import Path
 from html2text import html2text
 from functools import partial
 
-from requests_toolbelt.utils import dump
+class Config:
+    def __init__(self, api_url, api_token, locale, extension_to_runtime):
+        self.api_url = api_url
+        self.api_token = api_token
+        self.locale = locale
+        self.extension_to_runtime = extension_to_runtime
 
-DEFAULT_LOCALE = "cs"
-GROUP_ID="dc8a992f-398a-11e7-bec6-005056854569"
-EXTENSION_RUNTIME_ENV_MAP = {
-    "cs": "mono46",
-    "c": "c-gcc-linux",
-    "pas": "freepascal-linux",
-    "java": "java8",
-    "cpp": "cxx11-gcc-linux"
-}
+    @classmethod
+    def load(cls, config_path):
+        config = {
+            "extension_to_runtime": {
+                "cs": "mono46",
+                "c": "c-gcc-linux",
+                "pas": "freepascal-linux",
+                "java": "java8",
+                "cpp": "cxx11-gcc-linux"
+            },
+            "locale": "cs"
+        }
+
+        data = yaml.load(config_path.open("r"))
+        config.update(data)
+
+        return cls(**config)
 
 def load_content(exercise_folder):
     content = (Path(exercise_folder) / "content.xml").read_bytes()
@@ -71,11 +85,11 @@ def replace_file_references(text, url_map):
     return re.sub(r'\(\$DIR/(.*)\)', replace, text)
 
 
-def load_reference_solution_details(content_soup):
+def load_reference_solution_details(content_soup, extension_to_runtime):
     for solution in content_soup.select("solution"):
         yield solution["id"], {
             "note": solution.find("comment").get_text(),
-            "runtimeEnvironmentId": EXTENSION_RUNTIME_ENV_MAP[solution.find("extension").get_text()]
+            "runtimeEnvironmentId": extension_to_runtime[solution.find("extension").get_text()]
         }
 
 def load_reference_solution_file(solution_id, content_soup, exercise_folder):
@@ -109,13 +123,15 @@ def details(exercise_folder):
     print(load_active_text(soup))
 
 @cli.command()
-@click.argument("api_url")
-@click.argument("api_token")
 @click.argument("exercise_folder")
-def run(api_url, api_token, exercise_folder):
+@click.argument("group_id")
+def run(exercise_folder, group_id):
     logging.basicConfig(level=logging.INFO)
 
-    post = partial(post_request, api_url, {"Authorization": "Bearer " + api_token})
+    config = Config.load(Path.cwd() / "import-config.yml")
+    logging.info("Configuration loaded")
+
+    post = partial(post_request, config.api_url, {"Authorization": "Bearer " + config.api_token})
 
     content_soup = load_content(exercise_folder)
     logging.info("content.xml loaded")
@@ -149,7 +165,7 @@ def run(api_url, api_token, exercise_folder):
 
     # Set the details of the new exercise
     details = load_details(content_soup)
-    details["localizedTexts[0][locale]"] = DEFAULT_LOCALE
+    details["localizedTexts[0][locale]"] = config.locale
     details["localizedTexts[0][text]"] = text
     post('/exercises/{}'.format(exercise_id), data=details)
 
@@ -169,7 +185,7 @@ def run(api_url, api_token, exercise_folder):
     logging.info("Uploaded exercise files associated with the exercise")
 
     # Upload reference solutions
-    for solution_id, solution in load_reference_solution_details(content_soup):
+    for solution_id, solution in load_reference_solution_details(content_soup, config.extension_to_runtime):
         path = load_reference_solution_file(solution_id, content_soup, exercise_folder)
         solution["files[0]"] = upload_file(post, path)
         payload = post('/reference-solutions/exercise/{}'.format(exercise_id), data=solution)

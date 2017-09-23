@@ -5,8 +5,12 @@ import logging
 from bs4 import BeautifulSoup
 from pathlib import Path
 from html2text import html2text
+from functools import partial
+
+from requests_toolbelt.utils import dump
 
 DEFAULT_LOCALE = "cs"
+GROUP_ID="dc8a992f-398a-11e7-bec6-005056854569"
 EXTENSION_RUNTIME_ENV_MAP = {
     "cs": "mono46",
     "c": "c-gcc-linux",
@@ -25,6 +29,10 @@ def extract_payload(response):
         raise RuntimeError("Received error from API: " + json["msg"])
 
     return json["payload"]
+
+def post_request(api_url, headers, url, files={}, data={}):
+    response = requests.post(api_url + "/v1/" + url, files=files, data=data, headers=headers)
+    return extract_payload(response)
 
 def load_details(soup):
     result = {}
@@ -71,22 +79,20 @@ def load_reference_solution_details(content_soup):
         }
 
 def load_reference_solution_file(solution_id, content_soup, exercise_folder):
-    extension = content_soup.select("solution[id={}] extension".format(solution_id)).get_text()
-    return Path(exercise_folder) / solutions / solution_id / "source.{}".format(extension)
+    extension = content_soup.select("solution[id={}] extension".format(solution_id))[0].get_text()
+    return Path(exercise_folder) / "solutions" / solution_id / "source.{}".format(extension)
 
 def load_exercise_files(exercise_folder):
     path = Path(exercise_folder) / "testdata"
-    return list(path.glob("*.in")) + path.glob("*.out")
+    return list(path.glob("*.in")) + list(path.glob("*.out"))
 
-def upload_file(session, request, path):
+def upload_file(post, path):
         filename = path.name
         logging.info("Uploading %s", filename)
 
-        request.url += "/uploaded-files"
-        request.files = {filename: path.read_bytes()}
+        payload = post("/uploaded-files", files={filename: path.open("rb")})
+        uploaded_file_id = payload["id"]
 
-        response = session.send(request)
-        uploaded_file_id = extract_payload(response)["id"]
         logging.info("Uploaded with id %s", uploaded_file_id)
 
         return uploaded_file_id
@@ -107,17 +113,19 @@ def details(exercise_folder):
 @click.argument("api_token")
 @click.argument("exercise_folder")
 def run(api_url, api_token, exercise_folder):
-    session = requests.Session()
-    request_template = requests.Request('POST', api_url, headers={"Authorization": "Bearer " + api_token})
+    logging.basicConfig(level=logging.INFO)
+
+    post = partial(post_request, api_url, {"Authorization": "Bearer " + api_token})
 
     content_soup = load_content(exercise_folder)
     logging.info("content.xml loaded")
 
     # Create a new, empty exercise
-    creation_request = request_template.prepare()
-    creation_request.url += "/exercises"
-    response = session.send(creation_request)
-    exercise_id = extract_payload(response)["id"]
+    creation_payload = post("/exercises", data={
+        "groupId": GROUP_ID
+    })
+
+    exercise_id = creation_payload["id"]
     logging.info("Exercise created with id %s", exercise_id)
 
     # Upload additional files (attachments) and associate them with the exercise
@@ -126,26 +134,25 @@ def run(api_url, api_token, exercise_folder):
 
     logging.info("Uploading attachments")
     for path in load_additional_files(exercise_folder, text_id):
-        id_map[path.name] = upload_file(session, request_template.prepare(), path)
+        id_map[path.name] = upload_file(post, path)
 
-    associate_files_request = request_template.prepare()
-    associate_files_request.url += "/exercises/{}/additional-files".format(exercise_id)
-    associate_files_request.files = {"files[{}]".format(i): file_id for i, file_id in enumerate(id_map.values())}
-    extract_payload(session.send(associate_files_request))
+    if id_map:
+        post("/exercises/{}/additional-files".format(exercise_id), data={
+            "files[{}]".format(i): file_id for i, file_id in enumerate(id_map.values())
+        })
+
     logging.info("Uploaded attachments associated with the exercise")
 
     # Prepare the exercise text
-    url_map = {filename: "{}/uploaded-files/{}/download".format(request_template.url, file_id) for filename, file_id in id_map.items()}
+    url_map = {filename: "{}/v1/uploaded-files/{}/download".format(api_url, file_id) for filename, file_id in id_map.items()}
     text = replace_file_references(text, url_map)
 
     # Set the details of the new exercise
-    details_request = request_template.prepare()
-    details_request.url += '/exercises/{}'.format(exercise_id)
-    details_request.files = load_details(content_soup)
-    details_request.files["localizedTexts[0][locale]"] = DEFAULT_LOCALE
-    details_request.files["localizedTexts[0][text]"] = text
-    response = session.send(details_request)
-    extract_payload(response)
+    details = load_details(content_soup)
+    details["localizedTexts[0][locale]"] = DEFAULT_LOCALE
+    details["localizedTexts[0][text]"] = text
+    post('/exercises/{}'.format(exercise_id), data=details)
+
     logging.info("Exercise details updated")
 
     # Upload exercise files and associate them with the exercise
@@ -153,22 +160,20 @@ def run(api_url, api_token, exercise_folder):
 
     logging.info("Uploading supplementary exercise files")
     for path in load_exercise_files(exercise_folder):
-        id_map[path.name] = upload_file(session, request_template.prepare(), path)
+        id_map[path.name] = upload_file(post, path)
 
-    associate_files_request = request_template.prepare()
-    associate_files_request.url += "/exercises/{}/supplementary-files".format(exercise_id)
-    associate_files_request.files = {"files[{}]".format(i): file_id for i, file_id in enumerate(id_map.values())}
-    extract_payload(session.send(associate_files_request))
+    post("/exercises/{}/supplementary-files".format(exercise_id), data={
+        "files[{}]".format(i): file_id for i, file_id in enumerate(id_map.values())
+    })
+
     logging.info("Uploaded exercise files associated with the exercise")
 
     # Upload reference solutions
     for solution_id, solution in load_reference_solution_details(content_soup):
         path = load_reference_solution_file(solution_id, content_soup, exercise_folder)
-        solution["files[0]"] = upload_file(session, request_template.prepare(), path)
-        solution_request = request_template.prepare()
-        solution_request.url += '/reference-solutions/exercise/{}'.format(exercise_id)
-        solution_request.files = solution
-        payload = extract_payload(session.send(solution_request))
+        solution["files[0]"] = upload_file(post, path)
+        payload = post('/reference-solutions/exercise/{}'.format(exercise_id), data=solution)
+
         logging.info("New reference solution created, with id %s", payload["id"])
 
     # Configure tests

@@ -98,11 +98,18 @@ def load_reference_solution_file(solution_id, content_soup, exercise_folder):
 
 def load_exercise_files(exercise_folder):
     path = Path(exercise_folder) / "testdata"
-    return list(path.glob("*.in")) + list(path.glob("*.out"))
+    for file_node in path.iterdir():
+        if file_node.name == "config":
+            continue
+        if file_node.suffix in (".in", ".out") and file_node.is_dir():
+            for child in file_node.iterdir():
+                yield "{}.{}".format(child.stem, file_node.name), child
+        else:
+            yield file_node.name, file_node
 
-def upload_file(post, path):
-        filename = path.name
-        logging.info("Uploading %s", filename)
+def upload_file(post, path, filename=None):
+        filename = filename or path.name
+        logging.info("Uploading {}".format(filename) if filename is None else "Uploading {} as {}".format(path.name, filename))
 
         payload = post("/uploaded-files", files={filename: path.open("rb")})
         uploaded_file_id = payload["id"]
@@ -138,7 +145,7 @@ def run(exercise_folder, group_id):
 
     # Create a new, empty exercise
     creation_payload = post("/exercises", data={
-        "groupId": GROUP_ID
+        "groupId": group_id
     })
 
     exercise_id = creation_payload["id"]
@@ -160,7 +167,7 @@ def run(exercise_folder, group_id):
     logging.info("Uploaded attachments associated with the exercise")
 
     # Prepare the exercise text
-    url_map = {filename: "{}/v1/uploaded-files/{}/download".format(api_url, file_id) for filename, file_id in id_map.items()}
+    url_map = {filename: "{}/v1/uploaded-files/{}/download".format(config.api_url, file_id) for filename, file_id in id_map.items()}
     text = replace_file_references(text, url_map)
 
     # Set the details of the new exercise
@@ -172,14 +179,14 @@ def run(exercise_folder, group_id):
     logging.info("Exercise details updated")
 
     # Upload exercise files and associate them with the exercise
-    id_map = {}
+    exercise_files = set()
 
     logging.info("Uploading supplementary exercise files")
-    for path in load_exercise_files(exercise_folder):
-        id_map[path.name] = upload_file(post, path)
+    for name, path in load_exercise_files(exercise_folder):
+        exercise_files.add(upload_file(post, path, name))
 
     post("/exercises/{}/supplementary-files".format(exercise_id), data={
-        "files[{}]".format(i): file_id for i, file_id in enumerate(id_map.values())
+        "files[{}]".format(i): file_id for i, file_id in enumerate(exercise_files)
     })
 
     logging.info("Uploaded exercise files associated with the exercise")

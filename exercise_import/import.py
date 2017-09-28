@@ -1,13 +1,12 @@
 import click
-import requests
 import re
 import logging
 import yaml
 from bs4 import BeautifulSoup
 from pathlib import Path
 from html2text import html2text
-from functools import partial
 from collections import defaultdict
+from pprint import pprint
 
 from .codex_config import load_codex_test_config
 from .api import ApiClient
@@ -142,9 +141,7 @@ def load_allowed_extensions(content_soup):
     for item in content_soup.select("extensions item"):
         yield item.get_text()
 
-def make_exercise_config(config, content_soup, exercise_file_id_map, pipelines, tests):
-    extensions = list(load_allowed_extensions(content_soup))
-
+def make_exercise_config(config, content_soup, exercise_file_data, pipelines, tests):
     exercise_config = []
     exercise_config.append({
         "name": "default",
@@ -152,7 +149,7 @@ def make_exercise_config(config, content_soup, exercise_file_id_map, pipelines, 
     })
 
     pipeline_map = {item["name"]: item["id"] for item in pipelines}
-    input_files = {name: file_id for name, file_id in exercise_file_id_map.items() if name.endwsith(".in")}
+    input_files = {name: hashName for name, hashName in exercise_file_data.items() if name.endswith(".in")}
 
     for extension in load_allowed_extensions(content_soup):
         environment = config.extension_to_runtime[extension]
@@ -160,20 +157,47 @@ def make_exercise_config(config, content_soup, exercise_file_id_map, pipelines, 
 
         for test in tests:
             build_pipeline = pipeline_map[config.extension_to_pipeline[extension]["build"]]
-            exec_pipelines = pipeline_map[config.extension_to_pipeline[extension]["exec"]]
+            exec_pipelines = config.extension_to_pipeline[extension]["exec"]
 
             test_stdio = test.in_type == "stdio"
-            exec_pipeline = exec_pipelines["stdio"] if test_stdio else exec_pipelines["files"]
+            exec_pipeline = pipeline_map[exec_pipelines["stdio"] if test_stdio else exec_pipelines["files"]]
 
             if not test_stdio:
                 relevant_inputs = {
-                    name: file_id for name, file_id in input_files.items()
+                    name: hashName for name, hashName in input_files.items()
                     if name.startswith("{}.".format(test.number))
                 } 
                 test_inputs = list(relevant_inputs.values())
-                test_input_names = list(relevant_inputs.keys())
+                test_input_names = [test.in_file] if test.in_type == "file" else [name[name.index(".") + 1 : ] for name in relevant_inputs.keys()]
             else:
-                test_inputs = exercise_file_id_map["{}.in".format(test.number)]
+                test_inputs = exercise_file_data["{}.in".format(test.number)]
+                test_input_names = None
+                test_input_names = "input.in"
+
+            variables = [
+                {
+                    "name": "input-files" if not test_stdio else "input-file",
+                    "type": "remote-file[]" if not test_stdio else "remote-file",
+                    "value": test_inputs
+                },
+                {
+                    "name": "expected-output",
+                    "type": "remote-file",
+                    "value": exercise_file_data["{}.out".format(test.number)]
+                },
+                {
+                    "name": "actual-output",
+                    "type": "file",
+                    "value": test.out_file or "{}.actual.out".format(test.number)
+                }
+            ]
+
+            if test_input_names is not None:
+                variables.append({
+                    "name": "actual-inputs" if not test_stdio else "actual-input",
+                    "type": "file[]" if not test_stdio else "file",
+                    "value": test_input_names
+                })
 
             env_tests.append({
                 "name": test.name,
@@ -184,31 +208,15 @@ def make_exercise_config(config, content_soup, exercise_file_id_map, pipelines, 
                     },
                     {
                         "name": exec_pipeline,
-                        "variables": [
-                            {
-                                "name": "input-files" if not test_stdio else "input-file",
-                                "type": "remote-file[]" if not test_stdio else "remote_file",
-                                "value": test_inputs
-                            },
-                            {
-                                "name": "actual-inputs" if not test_stdio else "actual-input",
-                                "type": "file[]" if not test_stdio else "file",
-                                "value": test_input_names
-                            },
-                            {
-                                "name": "expected-output",
-                                "type": "remote-file",
-                                "value": exercise_file_id_map["{}.out".format(test.number)]
-                            },
-                            {
-                                "name": "actual-output",
-                                "type": "file",
-                                "value": test.out_file
-                            }
-                        ]
+                        "variables": variables
                     }
                 ]
             })
+
+        exercise_config.append({
+            "name": environment,
+            "tests": env_tests
+        })
 
     return exercise_config
 
@@ -217,11 +225,10 @@ def upload_file(api, path, filename=None):
     logging.info("Uploading {}".format(filename) if filename is None else "Uploading {} as {}".format(path.name, filename))
 
     payload = api.upload_file(filename, path.open("rb"))
-    uploaded_file_id = payload["id"]
 
-    logging.info("Uploaded with id %s", uploaded_file_id)
+    logging.info("Uploaded with id %s", payload["id"])
 
-    return uploaded_file_id
+    return payload
 
 def check_for_cross_io_tests(tests):
     for test in tests:
@@ -232,7 +239,7 @@ def check_for_cross_io_tests(tests):
 
 def check_for_strange_judges(tests):
     for test in tests:
-        if test.judge != "bin/codex-judge":
+        if test.judge != "bin/codex_judge":
             return test.judge
 
     return None
@@ -247,19 +254,23 @@ def details(exercise_folder):
     soup = load_content(exercise_folder)
 
     print("### Exercise details")
-    print(load_details(soup))
+    pprint(load_details(soup))
     print()
 
     print("### Exercise assignment text")
-    print(load_active_text(soup))
+    pprint(load_active_text(soup))
     print()
 
     config = Config.load(Path.cwd() / "import-config.yml")
     api = ApiClient(config.api_url, config.api_token)
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
+    files = defaultdict(lambda: "random-file-uuid")
+
+    for name, path in load_exercise_files(exercise_folder):
+        files.get(name) # Make sure the keys are present in the exercise file map
 
     print("### Exercise configuration")
-    print(make_exercise_config(config, soup, defaultdict(lambda: "random-file-uuid"), api.get_pipelines(), tests))
+    pprint(make_exercise_config(config, soup, files, api.get_pipelines(), tests))
     print()
 
 @cli.command()
@@ -287,10 +298,10 @@ def run(exercise_folder, group_id):
 
     logging.info("Uploading attachments")
     for path in load_additional_files(exercise_folder, text_id):
-        id_map[path.name] = upload_file(api, path)
+        id_map[path.name] = upload_file(api, path)["id"]
 
     if id_map:
-        api.add_exercise_attachments(exercise_id, id_map)
+        api.add_exercise_attachments(exercise_id, id_map.values())
 
     logging.info("Uploaded attachments associated with the exercise")
 
@@ -309,25 +320,25 @@ def run(exercise_folder, group_id):
     logging.info("Exercise details updated")
 
     # Upload exercise files and associate them with the exercise
-    exercise_file_id_map = {}
+    exercise_file_data = {}
 
     logging.info("Uploading supplementary exercise files")
     for name, path in load_exercise_files(exercise_folder):
-        exercise_file_id_map[name] = upload_file(api, path, name)
+        exercise_file_data[name] = upload_file(api, path, name)
 
-    api.add_exercise_files(exercise_id, exercise_file_id_map)
+    api.add_exercise_files(exercise_id, [data["id"] for data in exercise_file_data.values()])
     logging.info("Uploaded exercise files associated with the exercise")
 
     # Upload reference solutions
     for solution_id, solution in load_reference_solution_details(content_soup, config.extension_to_runtime):
         path = load_reference_solution_file(solution_id, content_soup, exercise_folder)
-        solution["files"] = [upload_file(api, path)]
+        solution["files"] = [upload_file(api, path)["id"]]
         payload = api.create_reference_solution(exercise_id, solution)
 
         logging.info("New reference solution created, with id %s", payload["id"])
 
     # Configure environments
-    extensions = list(load_allowed_extensions(content_soup))
+    extensions = load_allowed_extensions(content_soup)
     environments = [config.extension_to_runtime[ext] for ext in extensions]
     env_data = {item["id"]: item for item in api.get_runtime_environments()}
     env_configs = [
@@ -345,14 +356,14 @@ def run(exercise_folder, group_id):
     if check_for_cross_io_tests(tests):
         logging.warning("Exercise %s takes input from stdin and writes a file (or vice-versa)", exercise_id)
 
-    strange_judge = check_for_strange_juddges(tests)
+    strange_judge = check_for_strange_judges(tests)
     if strange_judge is not None:
         logging.warning("Exercise %s uses a non-default judge %s", exercise_id, strange_judge)
 
     exercise_config = make_exercise_config(
         config,
         content_soup,
-        exercise_file_id_map,
+        {item["name"]: item["hashName"] for item in api.get_exercise_files(exercise_id)},
         api.get_pipelines(),
         tests
     )

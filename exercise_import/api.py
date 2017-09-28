@@ -6,7 +6,7 @@ class ApiClient:
         self.headers = {"Authorization": "Bearer " + api_token}
 
     def post(self, url, files={}, data={}):
-        response = requests.post(self.api_url + "/v1/" + url, files=files, data=self.formdata_encode(data), headers=headers)
+        response = requests.post(self.api_url + "/v1/" + url, files=files, data=self.formdata_encode(data), headers=self.headers)
         return self.extract_payload(response)
 
     def get(self, url):
@@ -22,16 +22,22 @@ class ApiClient:
     def upload_file(self, filename, stream):
         return self.post("/uploaded-files", files={filename: stream})
 
+    def get_uploaded_file_data(self, file_id):
+        return self.get("/uploaded-files/{}".format(file_id))
+
     def create_exercise(self, group_id):
         return self.post("/exercises", {
             "groupId": group_id
         })
 
-    def add_exercise_attachments(self, exercise_id, id_map):
-        self.post("/exercises/{}/additional-files".format(exercise_id), data={"files": id_map.values()})
+    def add_exercise_attachments(self, exercise_id, file_ids):
+        self.post("/exercises/{}/additional-files".format(exercise_id), data={"files": file_ids})
 
-    def add_exercise_files(self, exercise_id, id_map):
-        self.post("/exercises/{}/supplementary-files".format(exercise_id), data={"files": id_map.values()})
+    def add_exercise_files(self, exercise_id, file_ids):
+        self.post("/exercises/{}/supplementary-files".format(exercise_id), data={"files": file_ids})
+
+    def get_exercise_files(self, exercise_id):
+        return self.get("/exercises/{}/supplementary-files".format(exercise_id))
 
     def update_exercise(self, exercise_id, details):
         self.post('/exercises/{}'.format(exercise_id), data=details)
@@ -45,7 +51,7 @@ class ApiClient:
         })
 
     def update_exercise_config(self, exercise_id, config):
-        self.post("/exercises/{}/config", data={"config": config})
+        self.post("/exercises/{}/config".format(exercise_id), data={"config": config})
 
     @staticmethod
     def extract_payload(response):

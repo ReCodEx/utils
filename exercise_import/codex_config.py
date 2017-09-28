@@ -1,3 +1,5 @@
+import re
+
 class TestLimits:
     def __init__(self):
         self.time_limit = ''
@@ -18,7 +20,7 @@ class JobTest:
         self.cmd_args = []
 
     @property
-    def name():
+    def name(self):
         return "Test {}".format(self.number)
 
     def __str__(self):
@@ -35,8 +37,8 @@ class JobTest:
                 .format(limit_group, self.limits[limit_group].time_limit, self.limits[limit_group].mem_limit)
         return output
 
-def load_codex_test_config(stream):
-    lines = (line.strip().split('=').replace("'", "") for line in stream if line.strip())
+def load_codex_test_config(path):
+    lines = (line.strip().replace("'", "").split('=') for line in path.open("r") if line.strip())
     config = dict(lines)
 
     tests = [JobTest(num) for num in config['TESTS'].split(sep=' ')]

@@ -8,6 +8,8 @@ from pathlib import Path
 from html2text import html2text
 from functools import partial
 
+from .codex_config import load_codex_test_config
+
 class Config:
     def __init__(self, api_url, api_token, locale, extension_to_runtime):
         self.api_url = api_url
@@ -24,6 +26,43 @@ class Config:
                 "pas": "freepascal-linux",
                 "java": "java8",
                 "cpp": "cxx11-gcc-linux"
+            },
+            "extension_to_pipeline": {
+                "cs": {
+                    "build": "MCS Compilation",
+                    "exec": {
+                        "files": "Mono execution & evaluation",
+                        "stdio": "Mono stdin/out execution & evaluation"
+                    }
+                },
+                "c": {
+                    "build": "GCC Compilation",
+                    "exec": {
+                        "files": "ELF execution & evaluation",
+                        "stdio": "ELF stdin/out execution & evaluation"
+                    }
+                },
+                "pas": {
+                    "build": "FreePascal Compilation",
+                    "exec": {
+                        "files": "ELF execution & evaluation",
+                        "stdio": "ELF stdin/out execution & evaluation"
+                    }
+                },
+                "java": {
+                    "build": "Javac Compilation",
+                    "exec": {
+                        "files": "Java execution & evaluation",
+                        "stdio": "Java stdin/out execution & evaluation"
+                    }
+                },
+                "cpp": {
+                    "build": "G++ Compilation",
+                    "exec": {
+                        "files": "ELF execution & evaluation",
+                        "stdio": "ELF stdin/out execution & evaluation"
+                    }
+                }
             },
             "locale": "cs"
         }
@@ -45,7 +84,11 @@ def extract_payload(response):
     return json["payload"]
 
 def post_request(api_url, headers, url, files={}, data={}):
-    response = requests.post(api_url + "/v1/" + url, files=files, data=data, headers=headers)
+    response = requests.post(api_url + "/v1/" + url, files=files, data=formdata_encode(data), headers=headers)
+    return extract_payload(response)
+
+def get_request(api_url, headers, url):
+    response = requests.get(api_url + "/v1/" + url, headers=headers)
     return extract_payload(response)
 
 def load_details(soup):
@@ -107,16 +150,45 @@ def load_exercise_files(exercise_folder):
         else:
             yield file_node.name, file_node
 
+def load_allowed_extensions(content_soup):
+    for item in content_soup.select("extensions item"):
+        yield item.get_text()
+
 def upload_file(post, path, filename=None):
-        filename = filename or path.name
-        logging.info("Uploading {}".format(filename) if filename is None else "Uploading {} as {}".format(path.name, filename))
+    filename = filename or path.name
+    logging.info("Uploading {}".format(filename) if filename is None else "Uploading {} as {}".format(path.name, filename))
 
-        payload = post("/uploaded-files", files={filename: path.open("rb")})
-        uploaded_file_id = payload["id"]
+    payload = post("/uploaded-files", files={filename: path.open("rb")})
+    uploaded_file_id = payload["id"]
 
-        logging.info("Uploaded with id %s", uploaded_file_id)
+    logging.info("Uploaded with id %s", uploaded_file_id)
 
-        return uploaded_file_id
+    return uploaded_file_id
+
+def formdata_encode(data):
+    """
+    >>> formdata_encode({})
+    {}
+    >>> formdata_encode({"hello": 2, "world": 42})
+    {'hello': 2, 'world': 42}
+    >>> formdata_encode({"data": [{"hello": 2, "world": 42}, {"how": 10, "are": 20, "you": 30}]})
+    {'data[0][hello]': 2, 'data[0][world]': 42, 'data[1][how]': 10, 'data[1][are]': 20, 'data[1][you]': 30}
+    """
+
+    def inner(prefix, data, wrap_key=False):
+        if isinstance(data, list) or isinstance(data, set):
+            data = dict(enumerate(data))
+
+        if not isinstance(data, dict):
+           yield prefix, data
+           return
+
+        for key, value in data.items():
+            if wrap_key:
+                key = "[{}]".format(key)
+            yield from inner(prefix + key, value, True)
+
+    return dict(inner("", data))
 
 @click.group()
 def cli():
@@ -139,6 +211,7 @@ def run(exercise_folder, group_id):
     logging.info("Configuration loaded")
 
     post = partial(post_request, config.api_url, {"Authorization": "Bearer " + config.api_token})
+    get = partial(get_request, config.api_url, {"Authorization": "Bearer " + config.api_token})
 
     content_soup = load_content(exercise_folder)
     logging.info("content.xml loaded")
@@ -160,9 +233,7 @@ def run(exercise_folder, group_id):
         id_map[path.name] = upload_file(post, path)
 
     if id_map:
-        post("/exercises/{}/additional-files".format(exercise_id), data={
-            "files[{}]".format(i): file_id for i, file_id in enumerate(id_map.values())
-        })
+        post("/exercises/{}/additional-files".format(exercise_id), data={"files": id_map.values()})
 
     logging.info("Uploaded attachments associated with the exercise")
 
@@ -172,10 +243,12 @@ def run(exercise_folder, group_id):
 
     # Set the details of the new exercise
     details = load_details(content_soup)
-    details["localizedTexts[0][locale]"] = config.locale
-    details["localizedTexts[0][text]"] = text
-    post('/exercises/{}'.format(exercise_id), data=details)
+    details["localizedTexts"] = [{
+        "locale": config.locale,
+        "text": text
+    }]
 
+    post('/exercises/{}'.format(exercise_id), data=details)
     logging.info("Exercise details updated")
 
     # Upload exercise files and associate them with the exercise
@@ -185,22 +258,53 @@ def run(exercise_folder, group_id):
     for name, path in load_exercise_files(exercise_folder):
         exercise_files.add(upload_file(post, path, name))
 
-    post("/exercises/{}/supplementary-files".format(exercise_id), data={
-        "files[{}]".format(i): file_id for i, file_id in enumerate(exercise_files)
-    })
+    post("/exercises/{}/supplementary-files".format(exercise_id), data={"files": exercise_files})
 
     logging.info("Uploaded exercise files associated with the exercise")
 
     # Upload reference solutions
     for solution_id, solution in load_reference_solution_details(content_soup, config.extension_to_runtime):
         path = load_reference_solution_file(solution_id, content_soup, exercise_folder)
-        solution["files[0]"] = upload_file(post, path)
+        solution["files"] = [upload_file(post, path)]
         payload = post('/reference-solutions/exercise/{}'.format(exercise_id), data=solution)
 
         logging.info("New reference solution created, with id %s", payload["id"])
 
+    # Configure environments
+    extensions = list(load_allowed_extensions(content_soup))
+    environments = [config.extension_to_runtime[ext] for ext in extensions]
+    env_data = {item["id"]: item for item in get('/runtime-environments')}
+    env_configs = {"environmentConfigs": [
+        {
+            "runtimeEnvironmentId": env_id,
+            "variablesTable": env_data[env_id]["defaultVariables"]
+        } for env_id in environments
+    ]}
+
+    post("/exercises/{}/environment-configs".format(exercise_id), data=env_configs)
+    logging.info("Added environments %s", ", ".join(environments))
+
     # Configure tests
-    # TODO
+    tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
+    exercise_config = []
+    exercise_config.append({
+        "name": "default",
+        "tests": [{"name": test.name, "pipelines": []} for test in tests]
+    })
+
+    for environment in environments:
+        env_tests = []
+
+        for test in tests:
+            env_tests.append({
+                "name": test.name,
+                "pipelines": [] # TODO insert appropriate pipelines
+            })
+
+        exercise_config.append({
+            "name": environment,
+            "tests": env_tests
+        })
 
 
 if __name__ == '__main__':

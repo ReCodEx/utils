@@ -12,12 +12,13 @@ from .codex_config import load_codex_test_config
 from .api import ApiClient
 
 class Config:
-    def __init__(self, api_url, api_token, locale, extension_to_runtime, extension_to_pipeline):
+    def __init__(self, api_url, api_token, locale, extension_to_runtime, extension_to_pipeline, judges):
         self.api_url = api_url
         self.api_token = api_token
         self.locale = locale
         self.extension_to_runtime = extension_to_runtime
         self.extension_to_pipeline = extension_to_pipeline
+        self.judges = judges
 
     @classmethod
     def load(cls, config_path):
@@ -50,6 +51,11 @@ class Config:
                     "build": "G++ Compilation",
                     "exec": "ELF {input}-{output} execution & evaluation"
                 }
+            },
+            "judges": {
+                "bin/codex_judge": "recodex-judge-normal",
+                "bin/codex_shufflejudge": "recodex-judge-shuffle",
+                "diff": "diff"
             },
             "locale": "cs"
         }
@@ -185,6 +191,11 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                     "name": "actual-output",
                     "type": "file",
                     "value": test.out_file or "{}.actual.out".format(test.number)
+                },
+                {
+                    "name": "judge-type",
+                    "type": "string",
+                    "value": config.judges.get(test.judge, test.judge)
                 }
             ]
 
@@ -226,9 +237,9 @@ def upload_file(api, path, filename=None):
 
     return payload
 
-def check_for_strange_judges(tests):
+def check_for_strange_judges(config, tests):
     for test in tests:
-        if test.judge != "bin/codex_judge":
+        if test.judge not in config.judges.keys():
             return test.judge
 
     return None
@@ -343,7 +354,7 @@ def run(exercise_folder, group_id):
     # Configure tests
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
 
-    strange_judge = check_for_strange_judges(tests)
+    strange_judge = check_for_strange_judges(config, tests)
     if strange_judge is not None:
         logging.warning("Exercise %s uses a non-default judge %s", exercise_id, strange_judge)
 

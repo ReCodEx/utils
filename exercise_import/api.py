@@ -26,7 +26,7 @@ class ApiClient:
         return self.get("/uploaded-files/{}".format(file_id))
 
     def create_exercise(self, group_id):
-        return self.post("/exercises", {
+        return self.post("/exercises", data={
             "groupId": group_id
         })
 

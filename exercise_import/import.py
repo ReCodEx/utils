@@ -148,9 +148,8 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
 
         for test in tests:
             build_pipeline = pipeline_map[config.extension_to_pipeline[extension]["build"]]
-            test_stdio = test.in_type == "stdio"
             input_stdio = test.in_type == "stdio"
-            output_stdio = test.in_type == "stdio"
+            output_stdio = test.out_type == "stdio"
 
             try:
                 exec_pipeline_name = config.extension_to_pipeline[extension]["exec"].format(

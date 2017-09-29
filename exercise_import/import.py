@@ -195,6 +195,11 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                     "name": "judge-type",
                     "type": "string",
                     "value": config.judges.get(test.judge, test.judge)
+                },
+                {
+                    "name": "run-args",
+                    "type": "string[]",
+                    "value": convert_args(test)
                 }
             ]
 
@@ -242,6 +247,13 @@ def check_for_strange_judges(config, tests):
             return test.judge
 
     return None
+
+def convert_args(test):
+    if "./$PROBLEM" not in test.cmd_args:
+        return []
+
+    program_index = test.cmd_args.index("./$PROBLEM")
+    return test.cmd_args[program_index + 1 :]
 
 @click.group()
 def cli():

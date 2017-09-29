@@ -84,8 +84,12 @@ def load_details(soup):
 def load_active_text(soup):
     text_entry = soup.select("text[active=1]")[0]
     content = text_entry.find("content").get_text()
+    content = BeautifulSoup(content, "lxml")
 
-    return text_entry["id"], html2text(content)
+    for node in content.select("code a"):
+        node.parent.unwrap()
+
+    return text_entry["id"], html2text(str(content))
 
 def load_additional_files(exercise_folder, text_id):
     path = Path(exercise_folder) / "texts" / text_id
@@ -97,13 +101,15 @@ def replace_file_references(text, url_map):
     '[link](https://my.web.com/archive.zip)'
     >>> replace_file_references("![kitten]($DIR/foo.jpg)", {"foo.jpg": "https://my.web.com/image.jpg"})
     '![kitten](https://my.web.com/image.jpg)'
+    >>> replace_file_references("(see ![kitten]($DIR/foo.jpg))", {"foo.jpg": "https://my.web.com/image.jpg"})
+    '(see ![kitten](https://my.web.com/image.jpg))'
     """
 
     def replace(match):
         filename = match.group(1)
         return "({})".format(url_map.get(filename, ""))
 
-    return re.sub(r'\(\$DIR/(.*)\)', replace, text)
+    return re.sub(r'\(\$DIR/(.*?)\)', replace, text)
 
 
 def load_reference_solution_details(content_soup, extension_to_runtime):
@@ -305,19 +311,20 @@ def run(exercise_folder, group_id):
 
     # Upload additional files (attachments) and associate them with the exercise
     text_id, text = load_active_text(content_soup)
-    id_map = {}
+    attachment_ids = set()
 
     logging.info("Uploading attachments")
     for path in load_additional_files(exercise_folder, text_id):
-        id_map[path.name] = upload_file(api, path)["id"]
+        attachment_ids.add(upload_file(api, path)["id"])
 
-    if id_map:
-        api.add_exercise_attachments(exercise_id, id_map.values())
+    if attachment_ids:
+        api.add_exercise_attachments(exercise_id, attachment_ids)
 
     logging.info("Uploaded attachments associated with the exercise")
 
     # Prepare the exercise text
-    url_map = {filename: "{}/v1/uploaded-files/{}/download".format(config.api_url, file_id) for filename, file_id in id_map.items()}
+    attachments = api.get_exercise_attachments(exercise_id)
+    url_map = {item["name"]: "{}/v1/uploaded-files/{}/download".format(config.api_url, item["id"]) for item in attachments}
     text = replace_file_references(text, url_map)
 
     # Set the details of the new exercise

@@ -33,6 +33,9 @@ class ApiClient:
     def add_exercise_attachments(self, exercise_id, file_ids):
         self.post("/exercises/{}/additional-files".format(exercise_id), data={"files": file_ids})
 
+    def get_exercise_attachments(self, exercise_id):
+        return self.get("/exercises/{}/additional-files".format(exercise_id))
+
     def add_exercise_files(self, exercise_id, file_ids):
         self.post("/exercises/{}/supplementary-files".format(exercise_id), data={"files": file_ids})
 

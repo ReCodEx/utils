@@ -32,38 +32,23 @@ class Config:
             "extension_to_pipeline": {
                 "cs": {
                     "build": "MCS Compilation",
-                    "exec": {
-                        "files": "Mono execution & evaluation",
-                        "stdio": "Mono stdin/out execution & evaluation"
-                    }
+                    "exec": "Mono {input}-{output} execution & evaluation"
                 },
                 "c": {
                     "build": "GCC Compilation",
-                    "exec": {
-                        "files": "ELF execution & evaluation",
-                        "stdio": "ELF stdin/out execution & evaluation"
-                    }
+                    "exec": "ELF {input}-{output} execution & evaluation"
                 },
                 "pas": {
                     "build": "FreePascal Compilation",
-                    "exec": {
-                        "files": "ELF execution & evaluation",
-                        "stdio": "ELF stdin/out execution & evaluation"
-                    }
+                    "exec": "ELF {input}-{output} execution & evaluation"
                 },
                 "java": {
                     "build": "Javac Compilation",
-                    "exec": {
-                        "files": "Java execution & evaluation",
-                        "stdio": "Java stdin/out execution & evaluation"
-                    }
+                    "exec": "Java {input}-{output} execution & evaluation"
                 },
                 "cpp": {
                     "build": "G++ Compilation",
-                    "exec": {
-                        "files": "ELF execution & evaluation",
-                        "stdio": "ELF stdin/out execution & evaluation"
-                    }
+                    "exec": "ELF {input}-{output} execution & evaluation"
                 }
             },
             "locale": "cs"
@@ -157,12 +142,24 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
 
         for test in tests:
             build_pipeline = pipeline_map[config.extension_to_pipeline[extension]["build"]]
-            exec_pipelines = config.extension_to_pipeline[extension]["exec"]
-
             test_stdio = test.in_type == "stdio"
-            exec_pipeline = pipeline_map[exec_pipelines["stdio"] if test_stdio else exec_pipelines["files"]]
+            input_stdio = test.in_type == "stdio"
+            output_stdio = test.in_type == "stdio"
 
-            if not test_stdio:
+            try:
+                exec_pipeline_name = config.extension_to_pipeline[extension]["exec"].format(
+                    input="stdin" if input_stdio else "files",
+                    output="stdout" if output_stdio else "file"
+                )
+                exec_pipeline = pipeline_map[exec_pipeline_name]
+            except KeyError:
+                logging.error(
+                    "Pipeline '%s' was not found, aborting configuration of test %s (environment %s)",
+                    pipeline_name, test.name, environment
+                )
+                continue
+
+            if not input_stdio:
                 relevant_inputs = {
                     name: hashName for name, hashName in input_files.items()
                     if name.startswith("{}.".format(test.number))
@@ -172,12 +169,11 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
             else:
                 test_inputs = exercise_file_data["{}.in".format(test.number)]
                 test_input_names = None
-                test_input_names = "input.in"
 
             variables = [
                 {
-                    "name": "input-files" if not test_stdio else "input-file",
-                    "type": "remote-file[]" if not test_stdio else "remote-file",
+                    "name": "input-files" if not input_stdio else "input-file",
+                    "type": "remote-file[]" if not input_stdio else "remote-file",
                     "value": test_inputs
                 },
                 {
@@ -192,10 +188,10 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                 }
             ]
 
-            if test_input_names is not None:
+            if not input_stdio:
                 variables.append({
-                    "name": "actual-inputs" if not test_stdio else "actual-input",
-                    "type": "file[]" if not test_stdio else "file",
+                    "name": "actual-inputs",
+                    "type": "file[]",
                     "value": test_input_names
                 })
 
@@ -229,13 +225,6 @@ def upload_file(api, path, filename=None):
     logging.info("Uploaded with id %s", payload["id"])
 
     return payload
-
-def check_for_cross_io_tests(tests):
-    for test in tests:
-        if (test.in_type == "stdio") != (test.out_type == "stdio"):
-            return True
-
-    return False
 
 def check_for_strange_judges(tests):
     for test in tests:
@@ -353,8 +342,6 @@ def run(exercise_folder, group_id):
 
     # Configure tests
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
-    if check_for_cross_io_tests(tests):
-        logging.warning("Exercise %s takes input from stdin and writes a file (or vice-versa)", exercise_id)
 
     strange_judge = check_for_strange_judges(tests)
     if strange_judge is not None:

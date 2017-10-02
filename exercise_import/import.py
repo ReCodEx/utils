@@ -293,12 +293,13 @@ def details(exercise_folder):
     print()
 
 @cli.command()
+@click.option("config_path", "-c")
 @click.argument("exercise_folder")
 @click.argument("group_id")
-def run(exercise_folder, group_id):
+def run(exercise_folder, group_id, config_path=None):
     logging.basicConfig(level=logging.INFO)
 
-    config = Config.load(Path.cwd() / "import-config.yml")
+    config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
     logging.info("Configuration loaded")
 
     api = ApiClient(config.api_url, config.api_token)
@@ -358,7 +359,7 @@ def run(exercise_folder, group_id):
         logging.info("New reference solution created, with id %s", payload["id"])
 
     # Configure environments
-    extensions = load_allowed_extensions(content_soup)
+    extensions = list(load_allowed_extensions(content_soup))
     environments = [config.extension_to_runtime[ext] for ext in extensions]
     env_data = {item["id"]: item for item in api.get_runtime_environments()}
     env_configs = [
@@ -388,7 +389,20 @@ def run(exercise_folder, group_id):
 
     api.update_exercise_config(exercise_id, exercise_config)
     logging.info("Exercise config updated")
+    
+    # Configure test limits
+    for extension, environment_id in zip(extensions, environments):
+        limits_config = {}
 
+        for test in tests:
+            key = extension if extension in test.limits.keys() else "default"
+            limits_config[test.name] = {
+                    "wall-time": test.limits[key].time_limit,
+                    "memory": test.limits[key].mem_limit
+            }
+        
+        api.update_limits(exercise_id, environment_id, limits_config)
+        logging.info("Limits set for environment %s", environment_id)
 
 if __name__ == '__main__':
     cli()

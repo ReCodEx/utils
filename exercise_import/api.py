@@ -56,6 +56,9 @@ class ApiClient:
     def update_exercise_config(self, exercise_id, config):
         self.post("/exercises/{}/config".format(exercise_id), data={"config": config})
 
+    def update_limits(self, exercise_id, environment_id, limits):
+        self.post("/exercises/{}/environment/{}/limits".format(exercise_id, environment_id), data={"limits": limits})
+
     @staticmethod
     def extract_payload(response):
         json = response.json()

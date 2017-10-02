@@ -193,11 +193,6 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                     "value": exercise_file_data["{}.out".format(test.number)]
                 },
                 {
-                    "name": "actual-output",
-                    "type": "file",
-                    "value": test.out_file or "{}.actual.out".format(test.number)
-                },
-                {
                     "name": "judge-type",
                     "type": "string",
                     "value": config.judges.get(test.judge, test.judge)
@@ -214,6 +209,13 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                     "name": "actual-inputs",
                     "type": "file[]",
                     "value": test_input_names
+                })
+
+            if not output_stdio:
+                variables.append({
+                    "name": "actual-output",
+                    "type": "file",
+                    "value": test.out_file or "{}.actual.out".format(test.number)
                 })
 
             env_tests.append({

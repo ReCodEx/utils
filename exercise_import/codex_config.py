@@ -45,10 +45,10 @@ def load_codex_test_config(path):
     for test in tests:
         # Set defaults
         test.points = config['POINTS_PER_TEST']
-        test.in_type = config['IN_TYPE']
-        test.out_type = config['OUT_TYPE']
+        test.in_type = config['IN_TYPE'] if 'IN_TYPE' in config else "stdio"
+        test.out_type = config['OUT_TYPE'] if 'OUT_TYPE' in config else "stdio"
         test.out_filter = config['OUTPUT_FILTER'].split(sep=' ')[0] if 'OUTPUT_FILTER' in config else None
-        test.judge = config['OUTPUT_CHECK'].split(sep=' ')[0]
+        test.judge = config['OUTPUT_CHECK'].split(sep=' ')[0] if 'OUTPUT_CHECK' in config else "bin/codex_judge"
         test.limits['default'] = TestLimits()
         test.limits['default'].time_limit = config['TIME_LIMIT']
         test.limits['default'].mem_limit = config['MEM_LIMIT']

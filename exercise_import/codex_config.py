@@ -38,7 +38,7 @@ class JobTest:
         return output
 
 def load_codex_test_config(path):
-    lines = (line.strip().replace("'", "").split('=') for line in path.open("r") if line.strip())
+    lines = (line.strip().replace("'", "").replace('"', "").split('=') for line in path.open("r") if line.strip() and not line.startswith('#'))
     config = dict(lines)
 
     tests = [JobTest(num) for num in config['TESTS'].split(sep=' ')]
@@ -47,7 +47,7 @@ def load_codex_test_config(path):
         test.points = config['POINTS_PER_TEST']
         test.in_type = config['IN_TYPE']
         test.out_type = config['OUT_TYPE']
-        test.out_filter = config['OUTPUT_FILTER'].split(sep=' ')[0]
+        test.out_filter = config['OUTPUT_FILTER'].split(sep=' ')[0] if 'OUTPUT_FILTER' in config else None
         test.judge = config['OUTPUT_CHECK'].split(sep=' ')[0]
         test.limits['default'] = TestLimits()
         test.limits['default'].time_limit = config['TIME_LIMIT']

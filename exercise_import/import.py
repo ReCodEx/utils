@@ -50,7 +50,12 @@ class Config:
                 "cpp": {
                     "build": "G++ Compilation",
                     "exec": "ELF {input}-{output} execution & evaluation"
+                },
+                "py": {
+                    "build": "Python pass-through compilation",
+                    "exec": "Python {input}-{output} execution & evaluation"
                 }
+
             },
             "judges": {
                 "bin/codex_judge": "recodex-judge-normal",
@@ -74,7 +79,7 @@ def load_details(soup):
 
     result["name"] = soup.select("data name")[0].get_text()
     result["version"] = soup.find("exercise")["version"]
-    result["description"] = soup.select("data comment")[0].get_text()
+    result["description"] = soup.select("data comment")[0].get_text() or "Lorem ipsum"
     result["difficulty"] = "easy"
     result["isPublic"] = True
     result["isLocked"] = True
@@ -178,7 +183,7 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                 test_inputs = list(relevant_inputs.values())
                 test_input_names = [test.in_file] if test.in_type == "file" else [name[name.index(".") + 1 : ] for name in relevant_inputs.keys()]
             else:
-                test_inputs = exercise_file_data["{}.in".format(test.number)]
+                test_inputs = input_files["{}.in".format(test.number)]
                 test_input_names = None
 
             variables = [
@@ -299,6 +304,8 @@ def details(exercise_folder):
 def run(exercise_folder, group_id, config_path=None):
     logging.basicConfig(level=logging.INFO)
 
+    logging.info("*** Importing from %s", exercise_folder)
+
     config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
     logging.info("Configuration loaded")
 
@@ -403,6 +410,9 @@ def run(exercise_folder, group_id, config_path=None):
         
         api.update_limits(exercise_id, environment_id, limits_config)
         logging.info("Limits set for environment %s", environment_id)
+
+    api.evaluate_reference_solutions(exercise_id)
+    logging.info("Requested an evaluation of reference solutions")
 
 if __name__ == '__main__':
     cli()

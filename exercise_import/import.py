@@ -131,7 +131,7 @@ def load_reference_solution_file(solution_id, content_soup, exercise_folder):
 def load_exercise_files(exercise_folder):
     path = Path(exercise_folder) / "testdata"
     for file_node in path.iterdir():
-        if file_node.name == "config":
+        if file_node.name == "config" or (file_node.is_dir() and file_node.name == "attic"):
             continue
         if file_node.suffix in (".in", ".out") and file_node.is_dir():
             for child in file_node.iterdir():

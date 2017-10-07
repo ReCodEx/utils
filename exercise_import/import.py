@@ -2,6 +2,7 @@ import click
 import re
 import logging
 import yaml
+import sys
 from bs4 import BeautifulSoup
 from pathlib import Path
 from html2text import html2text
@@ -296,6 +297,50 @@ def details(exercise_folder):
     print("### Exercise configuration")
     pprint(make_exercise_config(config, soup, files, api.get_pipelines(), tests))
     print()
+
+@cli.command()
+@click.argument("exercise_folder")
+def name(exercise_folder):
+    content_soup = load_content(exercise_folder)
+    details = load_details(content_soup)
+    print(details["name"])
+
+@cli.command()
+@click.argument("exercise_folder", nargs=-1)
+@click.option("config_path", "-c")
+def get_id(exercise_folder, config_path=None):
+    config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
+    api = ApiClient(config.api_url, config.api_token)
+    exercises = api.get_exercises()
+
+    for folder in exercise_folder:
+        found = False
+        content_soup = load_content(folder)
+        details = load_details(content_soup)
+        for exercise in exercises:
+            if exercise["name"] == details["name"]:
+                print(folder, exercise["id"])
+                found = True
+                break
+
+        if not found:
+            print(folder, "Nothing found")
+
+@cli.command()
+@click.argument("language")
+@click.argument("exercise_id")
+@click.option("config_path", "-c")
+def add_localization(language, exercise_id, config_path):
+    config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
+    api = ApiClient(config.api_url, config.api_token)
+
+    exercise = api.get_exercise(exercise_id)
+    exercise["localizedTexts"].append({
+        "locale": language,
+        "text": html2text(sys.stdin.read())
+    })
+
+    api.update_exercise(exercise_id, exercise)
 
 @cli.command()
 @click.option("config_path", "-c")

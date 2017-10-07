@@ -19,6 +19,12 @@ class ApiClient:
     def get_pipelines(self):
         return self.get("/pipelines")
 
+    def get_exercise(self, exercise_id):
+        return self.get("/exercises/{}".format(exercise_id))
+
+    def get_exercises(self):
+        return self.get("/exercises")
+
     def upload_file(self, filename, stream):
         return self.post("/uploaded-files", files={filename: stream})
 

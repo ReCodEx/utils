@@ -26,7 +26,7 @@ class ApiClient:
         return self.get("/exercises")
 
     def upload_file(self, filename, stream):
-        return self.post("/uploaded-files", files={filename: stream})
+        return self.post("/uploaded-files", files={"file": (filename, stream)})
 
     def get_uploaded_file_data(self, file_id):
         return self.get("/uploaded-files/{}".format(file_id))

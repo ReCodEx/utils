@@ -291,7 +291,9 @@ def details(exercise_folder):
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
     files = defaultdict(lambda: "random-file-uuid")
 
+    print("### Exercise files")
     for name, path in load_exercise_files(exercise_folder):
+        print(f"{path} as {name}")
         files.get(name) # Make sure the keys are present in the exercise file map
 
     print("### Exercise configuration")

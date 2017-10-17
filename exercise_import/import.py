@@ -344,9 +344,10 @@ def add_localization(language, exercise_id, config_path):
 
 @cli.command()
 @click.option("config_path", "-c")
+@click.option("exercise_id", "-e")
 @click.argument("exercise_folder")
 @click.argument("group_id")
-def run(exercise_folder, group_id, config_path=None):
+def run(exercise_folder, group_id, config_path=None, exercise_id=None):
     logging.basicConfig(level=logging.INFO)
 
     logging.info("*** Importing from %s", exercise_folder)
@@ -359,10 +360,13 @@ def run(exercise_folder, group_id, config_path=None):
     content_soup = load_content(exercise_folder)
     logging.info("content.xml loaded")
 
-    # Create a new, empty exercise
-    creation_payload = api.create_exercise(group_id)
-    exercise_id = creation_payload["id"]
-    logging.info("Exercise created with id %s", exercise_id)
+    # If no exercise ID was given, create a new, empty exercise
+    if exercise_id is None:
+        creation_payload = api.create_exercise(group_id)
+        exercise_id = creation_payload["id"]
+        logging.info("Exercise created with id %s", exercise_id)
+    else:
+        logging.info("Reusing exercise with id %s", exercise_id)
 
     # Upload additional files (attachments) and associate them with the exercise
     text_id, text = load_active_text(content_soup)

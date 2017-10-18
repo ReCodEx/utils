@@ -9,8 +9,8 @@ from html2text import html2text
 from collections import defaultdict
 from pprint import pprint
 
-from .codex_config import load_codex_test_config
-from .api import ApiClient
+from exercise_import.codex_config import load_codex_test_config
+from exercise_import.api import ApiClient
 
 class Config:
     def __init__(self, api_url, api_token, locale, extension_to_runtime, extension_to_pipeline, judges):
@@ -306,6 +306,17 @@ def name(exercise_folder):
     content_soup = load_content(exercise_folder)
     details = load_details(content_soup)
     print(details["name"])
+
+@cli.command()
+@click.argument("exercise_folder")
+def has_dir_test(exercise_folder):
+    content_soup = load_content(exercise_folder)
+    tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
+    for test in tests:
+        if test.in_type == "dir":
+            print(test.number, "in")
+        if test.out_type == "dir":
+            print(test.number, "out")
 
 @cli.command()
 @click.argument("exercise_folder", nargs=-1)

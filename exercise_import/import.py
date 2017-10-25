@@ -359,7 +359,7 @@ def add_localization(language, exercise_id, config_path):
 @click.option("config_path", "-c")
 @click.option("exercise_id", "-e")
 @click.argument("exercise_folder")
-@click.argument("group_id")
+@click.option("group_id", "-g")
 def run(exercise_folder, group_id, config_path=None, exercise_id=None):
     logging.basicConfig(level=logging.INFO)
 

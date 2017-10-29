@@ -48,6 +48,9 @@ class ApiClient:
     def get_exercise_files(self, exercise_id):
         return self.get("/exercises/{}/supplementary-files".format(exercise_id))
 
+    def set_exercise_score_config(self, exercise_id, score_config: str):
+        return self.post("/exercises/{}/score-config".format(exercise_id), data={"scoreConfig": score_config})
+
     def update_exercise(self, exercise_id, details):
         self.post('/exercises/{}'.format(exercise_id), data=details)
 

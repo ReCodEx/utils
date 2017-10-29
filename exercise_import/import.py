@@ -355,6 +355,20 @@ def add_localization(language, exercise_id, config_path):
 
     api.update_exercise(exercise_id, exercise)
 
+
+@cli.command()
+@click.option("exercise_id", "-e")
+@click.option("config_path", "-c")
+@click.argument("exercise_id")
+def set_test_weights(exercise_id, config_path, exercise_folder):
+    config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
+    api = ApiClient(config.api_url, config.api_token)
+    tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
+
+    score_config = {test.name: test.points for test in tests}
+    api.set_exercise_score_config(exercise_id, yaml.dumps(score_config))
+
+
 @cli.command()
 @click.option("config_path", "-c")
 @click.option("exercise_id", "-e")

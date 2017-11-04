@@ -38,7 +38,7 @@ class JobTest:
         return output
 
 def load_codex_test_config(path):
-    lines = (line.strip().replace("'", "").replace('"', "").split('=') for line in path.open("r") if line.strip() and not line.startswith('#'))
+    lines = (line.strip().replace("'", "").split('=', 1) for line in path.open("r") if line.strip() and not line.startswith('#'))
     config = dict(lines)
 
     tests = [JobTest(num) for num in config['TESTS'].split(sep=' ')]

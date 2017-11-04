@@ -1,7 +1,7 @@
 import click
 import re
 import logging
-import yaml
+from ruamel import yaml
 import sys
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -66,7 +66,7 @@ class Config:
             "locale": "cs"
         }
 
-        data = yaml.load(config_path.open("r"))
+        data = yaml.safe_load(config_path.open("r"))
         config.update(data)
 
         return cls(**config)

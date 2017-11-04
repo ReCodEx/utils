@@ -359,14 +359,14 @@ def add_localization(language, exercise_id, config_path):
 @cli.command()
 @click.option("exercise_id", "-e")
 @click.option("config_path", "-c")
-@click.argument("exercise_id")
+@click.argument("exercise_folder")
 def set_score_config(exercise_id, config_path, exercise_folder):
     config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
     api = ApiClient(config.api_url, config.api_token)
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
 
-    score_config = {test.name: test.points for test in tests}
-    api.set_exercise_score_config(exercise_id, yaml.dumps(score_config))
+    score_config = {test.name: int(test.points) for test in tests}
+    api.set_exercise_score_config(exercise_id, yaml.dump({"testWeights": score_config}, default_flow_style=False))
 
 
 @cli.command()

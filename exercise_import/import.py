@@ -417,8 +417,13 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
     details = load_details(content_soup)
     details["localizedTexts"] = [{
         "locale": config.locale,
+        "name": details["name"],
+        "description": details["description"],
         "text": text
     }]
+
+    del details["name"]
+    del details["description"]
 
     api.update_exercise(exercise_id, details)
     logging.info("Exercise details updated")

@@ -73,7 +73,11 @@ class ApiClient:
 
     @staticmethod
     def extract_payload(response):
-        json = response.json()
+        try:
+            json = response.json()
+        except JSONDecodeError:
+            logging.error("Loading JSON response failed, see full response below:")
+            logging.error(response.text)
         if not json["success"]:
             raise RuntimeError("Received error from API: " + json["msg"])
 

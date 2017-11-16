@@ -158,7 +158,7 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
         environment = config.extension_to_runtime[extension]
         env_tests = []
 
-        for test in tests:
+        for test_index, test in enumerate(tests):
             build_pipeline = pipeline_map[config.extension_to_pipeline[extension]["build"]]
             input_stdio = test.in_type == "stdio"
             output_stdio = test.out_type == "stdio"
@@ -187,28 +187,40 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                 test_inputs = input_files["{}.in".format(test.number)]
                 test_input_names = None
 
-            variables = [
-                {
-                    "name": "input-files" if not input_stdio else "input-file",
-                    "type": "remote-file[]" if not input_stdio else "remote-file",
-                    "value": test_inputs
-                },
-                {
+            output_name = "{}.out".format(test.number)
+
+            variables.append({
+                "name": "input-files" if not input_stdio else "input-file",
+                "type": "remote-file[]" if not input_stdio else "remote-file",
+                "value": test_inputs
+            })
+
+            if output_name in exercise_file_data:
+                variables.append({
                     "name": "expected-output",
                     "type": "remote-file",
-                    "value": exercise_file_data["{}.out".format(test.number)]
-                },
-                {
-                    "name": "judge-type",
-                    "type": "string",
-                    "value": config.judges.get(test.judge, test.judge)
-                },
-                {
-                    "name": "run-args",
-                    "type": "string[]",
-                    "value": convert_args(test)
-                }
-            ]
+                    "value": exercise_file_data[output_name]
+                })
+            elif test.in_type != "dir":
+                variables.append({
+                    "name": "expected-output",
+                    "type": "remote-file",
+                    "value": test_inputs[test_index]
+                })
+            else:
+                ERROR!!!
+
+            variables.append({
+                "name": "judge-type",
+                "type": "string",
+                "value": config.judges.get(test.judge, test.judge)
+            })
+
+            variables.append({
+                "name": "run-args",
+                "type": "string[]",
+                "value": convert_args(test)
+            })
 
             if not input_stdio:
                 variables.append({

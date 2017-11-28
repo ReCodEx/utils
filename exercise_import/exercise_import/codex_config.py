@@ -14,6 +14,7 @@ class JobTest:
         self.limits = dict()
         self.out_filter = ''
         self.judge = ''
+        self.judge_args = []
         self.in_file = None
         self.out_file = None
         self.executable = ''
@@ -22,6 +23,24 @@ class JobTest:
     @property
     def name(self):
         return "Test {}".format(self.number)
+
+    @property
+    def has_custom_judge(self):
+        return self.judge.startswith("$PDIR/")
+
+    @property
+    def custom_judge_binary(self):
+        return self._replace_vars(self.judge)
+
+    @property
+    def custom_judge_args(self):
+        return list(map(self._replace_vars, self.judge_args))
+
+    def _replace_vars(self, string):
+        string = string.replace("$PDIR/", "")
+        string = string.replace("$TDIR/", "" if self.out_type != "dir" else str(self.number) + "/")
+        string = string.replace("$TEST", self.number)
+        return string
 
     def __str__(self):
         output = "TEST {} -- points: {}, executable: {}, args: {}, in_type: {}, out_type: {}, filter: {}, judge: {}"\
@@ -48,7 +67,14 @@ def load_codex_test_config(path):
         test.in_type = config['IN_TYPE'] if 'IN_TYPE' in config else "stdio"
         test.out_type = config['OUT_TYPE'] if 'OUT_TYPE' in config else "stdio"
         test.out_filter = config['OUTPUT_FILTER'].split(sep=' ')[0] if 'OUTPUT_FILTER' in config else None
-        test.judge = config['OUTPUT_CHECK'].split(sep=' ')[0] if 'OUTPUT_CHECK' in config else "bin/codex_judge"
+
+        if 'OUTPUT_CHECK' in config:
+            parts = config['OUTPUT_CHECK'].split(sep=' ')
+            test.judge = parts[0]
+            test.judge_args = parts[1:] if len(parts) > 1 else []
+        else:
+            test.judge = "bin/codex_judge"
+
         test.limits['default'] = TestLimits()
         test.limits['default'].time_limit = config['TIME_LIMIT']
         test.limits['default'].mem_limit = config['MEM_LIMIT']
@@ -167,6 +193,16 @@ def load_codex_test_config(path):
                 test.in_type = config[config_key]
 
         # Handle test specific judge
+        m = re.search('TEST_([^_]*)_OUTPUT_CHECK', config_key)
+        if m:
+            test_num = m.group(1)
+            for test in tests:
+                if test.number != test_num:
+                    continue
+                parts = config[config_key].split(' ')
+                test.judge = parts[0]
+                test.judge_args = parts[1:] if len(parts) > 1 else []
+
         m = re.search('EXT_([^_]*)_TEST_([^_]*)_OUTPUT_CHECK', config_key)
         if m:
             extension = m.group(1)

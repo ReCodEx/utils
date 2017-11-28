@@ -34,27 +34,27 @@ class Config:
             "extension_to_pipeline": {
                 "cs": {
                     "build": "MCS Compilation",
-                    "exec": "Mono {input}-{output} execution & evaluation"
+                    "exec": "Mono execution & evaluation [{output_type}]"
                 },
                 "c": {
                     "build": "GCC Compilation",
-                    "exec": "ELF {input}-{output} execution & evaluation"
+                    "exec": "ELF execution & evaluation [{output_type}]"
                 },
                 "pas": {
                     "build": "FreePascal Compilation",
-                    "exec": "ELF {input}-{output} execution & evaluation"
+                    "exec": "ELF execution & evaluation [{output_type}]"
                 },
                 "java": {
                     "build": "Javac Compilation",
-                    "exec": "Java {input}-{output} execution & evaluation"
+                    "exec": "Java execution & evaluation [{output_type}]"
                 },
                 "cpp": {
                     "build": "G++ Compilation",
-                    "exec": "ELF {input}-{output} execution & evaluation"
+                    "exec": "ELF execution & evaluation [{output_type}]"
                 },
                 "py": {
                     "build": "Python pass-through compilation",
-                    "exec": "Python {input}-{output} execution & evaluation"
+                    "exec": "Python execution & evaluation [{output_type}]"
                 }
 
             },
@@ -144,12 +144,13 @@ def load_allowed_extensions(content_soup):
     for item in content_soup.select("extensions item"):
         yield item.get_text()
 
+def get_custom_judges(tests):
+    for test in tests:
+        if test.has_custom_judge:
+            yield test.custom_judge_binary
+
 def make_exercise_config(config, content_soup, exercise_file_data, pipelines, tests):
     exercise_config = []
-    exercise_config.append({
-        "name": "default",
-        "tests": [{"name": test.name, "pipelines": []} for test in tests]
-    })
 
     pipeline_map = {item["name"]: item["id"] for item in pipelines}
     input_files = {name: hashName for name, hashName in exercise_file_data.items() if name.endswith(".in")}
@@ -165,8 +166,7 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
 
             try:
                 exec_pipeline_name = config.extension_to_pipeline[extension]["exec"].format(
-                    input="stdin" if input_stdio else "files",
-                    output="stdout" if output_stdio else "file"
+                    output_type="stdout" if output_stdio else "outfile"
                 )
                 exec_pipeline = pipeline_map[exec_pipeline_name]
             except KeyError:
@@ -184,9 +184,10 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                 test_inputs = list(relevant_inputs.values())
                 test_input_names = [test.in_file] if test.in_type == "file" else [name[name.index(".") + 1 : ] for name in relevant_inputs.keys()]
             else:
-                test_inputs = input_files["{}.in".format(test.number)]
+                test_inputs = [input_files["{}.in".format(test.number)]]
                 test_input_names = None
 
+            variables = []
             output_name = "{}.out".format(test.number)
 
             variables.append({
@@ -195,25 +196,52 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                 "value": test_inputs
             })
 
+            variables.append({
+                "name": "stdin-file",
+                "type": "remote-file",
+                "value": test_inputs[0] if input_stdio else ""
+            })
+
             if output_name in exercise_file_data:
-                variables.append({
-                    "name": "expected-output",
-                    "type": "remote-file",
-                    "value": exercise_file_data[output_name]
-                })
-            elif test.in_type != "dir":
-                variables.append({
-                    "name": "expected-output",
-                    "type": "remote-file",
-                    "value": test_inputs[test_index]
-                })
+                expected_output = exercise_file_data[output_name]
+            elif test.in_type != "dir": # If there is no file with expected output, use first input file instead
+                expected_output = test_inputs[0]
             else:
-                ERROR!!!
+                logging.error("Invalid test configuration for test %d", test.number)
+                continue
+
+            variables.append({
+                "name": "expected-output",
+                "type": "remote-file",
+                "value": expected_output
+            })
+
+            if test.has_custom_judge:
+                judge_name = Path(test.custom_judge_binary).name
+                custom_judge = exercise_file_data[judge_name]
+                custom_judge_args = test.custom_judge_args
+                judge_type = ""
+            else:
+                custom_judge = ""
+                custom_judge_args = ""
+                judge_type = config.judges.get(test.judge, test.judge)
+
+            variables.append({
+                "name": "custom-judge",
+                "type": "file",
+                "value": custom_judge
+            })
+
+            variables.append({
+                "name": "judge-args",
+                "type": "string[]",
+                "value": custom_judge_args
+            })
 
             variables.append({
                 "name": "judge-type",
                 "type": "string",
-                "value": config.judges.get(test.judge, test.judge)
+                "value": judge_type
             })
 
             variables.append({
@@ -266,13 +294,6 @@ def upload_file(api, path, filename=None):
     logging.info("Uploaded with id %s", payload["id"])
 
     return payload
-
-def check_for_strange_judges(config, tests):
-    for test in tests:
-        if test.judge not in config.judges.keys():
-            return test.judge
-
-    return None
 
 def convert_args(test):
     if "./$PROBLEM" not in test.cmd_args:
@@ -475,9 +496,21 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
     # Configure tests
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
 
-    strange_judge = check_for_strange_judges(config, tests)
-    if strange_judge is not None:
-        logging.warning("Exercise %s uses a non-default judge %s", exercise_id, strange_judge)
+    api.set_exercise_tests(exercise_id, [{"name": test.name} for test in tests])
+    logging.info("Exercise tests configured")
+
+    # Upload custom judges
+    custom_judges = set(get_custom_judges(tests))
+    custom_judge_files = {}
+
+    if custom_judges:
+        logging.info("Uploading custom judges")
+        for judge in custom_judges:
+            judge_path = Path(exercise_folder).joinpath("testdata").joinpath(judge)
+            custom_judge_files[judge] = upload_file(api, judge_path, judge_path.name)
+
+        api.add_exercise_files(exercise_id, [data["id"] for data in custom_judge_files.values()])
+        logging.info("Uploaded judge files associated with the exercise")
 
     exercise_config = make_exercise_config(
         config,

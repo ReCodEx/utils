@@ -401,6 +401,21 @@ def set_score_config(exercise_id, config_path, exercise_folder):
     score_config = {test.name: int(test.points) for test in tests}
     api.set_exercise_score_config(exercise_id, yaml.dump({"testWeights": score_config}, default_flow_style=False))
 
+@cli.command()
+@click.option("config_path", "-c")
+def evaluate_all_rs(config_path):
+    """
+    Request evaluation for all reference solutions
+    """
+    config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
+    api = ApiClient(config.api_url, config.api_token)
+
+    with click.progressbar(api.get_exercises()) as bar:
+        for exercise in bar:
+            try:
+                api.evaluate_reference_solutions(exercise["id"])
+            except Exception as e:
+                logging.error("Error in exercise {}: {}".format(exercise["id"], str(e)))
 
 @cli.command()
 @click.option("config_path", "-c")

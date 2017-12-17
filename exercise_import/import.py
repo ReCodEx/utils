@@ -14,12 +14,11 @@ from exercise_import.codex_config import load_codex_test_config
 from exercise_import.api import ApiClient
 
 class Config:
-    def __init__(self, api_url, api_token, locale, extension_to_runtime, extension_to_pipeline, judges):
+    def __init__(self, api_url, api_token, locale, extension_to_runtime, judges, **kwargs):
         self.api_url = api_url
         self.api_token = api_token
         self.locale = locale
         self.extension_to_runtime = extension_to_runtime
-        self.extension_to_pipeline = extension_to_pipeline
         self.judges = judges
 
     @classmethod
@@ -31,33 +30,6 @@ class Config:
                 "pas": "freepascal-linux",
                 "java": "java8",
                 "cpp": "cxx11-gcc-linux"
-            },
-            "extension_to_pipeline": {
-                "cs": {
-                    "build": "MCS Compilation",
-                    "exec": "Mono execution & evaluation [{output_type}]"
-                },
-                "c": {
-                    "build": "GCC Compilation",
-                    "exec": "ELF execution & evaluation [{output_type}]"
-                },
-                "pas": {
-                    "build": "FreePascal Compilation",
-                    "exec": "ELF execution & evaluation [{output_type}]"
-                },
-                "java": {
-                    "build": "Javac Compilation",
-                    "exec": "Java execution & evaluation [{output_type}]"
-                },
-                "cpp": {
-                    "build": "G++ Compilation",
-                    "exec": "ELF execution & evaluation [{output_type}]"
-                },
-                "py": {
-                    "build": "Python pass-through compilation",
-                    "exec": "Python execution & evaluation [{output_type}]"
-                }
-
             },
             "judges": {
                 "bin/codex_judge": "recodex-judge-normal",
@@ -160,22 +132,36 @@ def make_exercise_config(config, content_soup, exercise_files, pipelines, tests)
         environment = config.extension_to_runtime[extension]
         env_tests = []
 
-        for test_index, test in enumerate(tests):
-            build_pipeline = pipeline_map[config.extension_to_pipeline[extension]["build"]]
+        for test in tests:
+            build_pipeline = None
+            for pipeline in pipelines:
+                params_match = pipeline["parameters"]["isCompilationPipeline"]
+                env_matches = environment in pipeline["runtimeEnvironmentIds"]
+
+                if params_match and env_matches:
+                    build_pipeline = pipeline["id"]
+                    break
+
+            if build_pipeline is None:
+                logging.error("No build pipeline found for test %d", test.number)
+                break
+
             input_stdio = test.in_type == "stdio"
             output_stdio = test.out_type == "stdio"
+            exec_parameter = "producesStdout" if output_stdio else "producesFiles"
 
-            try:
-                exec_pipeline_name = config.extension_to_pipeline[extension]["exec"].format(
-                    output_type="stdout" if output_stdio else "outfile"
-                )
-                exec_pipeline = pipeline_map[exec_pipeline_name]
-            except KeyError:
-                logging.error(
-                    "Pipeline '%s' was not found, aborting configuration of test %s (environment %s)",
-                    pipeline_name, test.name, environment
-                )
-                continue
+            exec_pipeline = None
+            for pipeline in pipelines:
+                params_match = pipeline["parameters"]["isExecutionPipeline"] and pipeline["parameters"][exec_parameter]
+                env_matches = environment in pipeline["runtimeEnvironmentIds"]
+
+                if params_match and env_matches:
+                    exec_pipeline = pipeline["id"]
+                    break
+
+            if exec_pipeline is None:
+                logging.error("No execution pipeline found for test %d", test.number)
+                break
 
             if not input_stdio:
                 test_inputs = [name for name in input_files if name.startswith("{}.".format(test.number))]

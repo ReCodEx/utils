@@ -1,4 +1,6 @@
 import requests
+from json import JSONDecodeError
+import logging
 
 class ApiClient:
     def __init__(self, api_url, api_token):
@@ -6,7 +8,7 @@ class ApiClient:
         self.headers = {"Authorization": "Bearer " + api_token}
 
     def post(self, url, files={}, data={}):
-        response = requests.post(self.api_url + "/v1/" + url, files=files, data=self.formdata_encode(data), headers=self.headers)
+        response = requests.post(self.api_url + "/v1/" + url, files=files, json=data, headers=self.headers)
         return self.extract_payload(response)
 
     def get(self, url):
@@ -87,34 +89,10 @@ class ApiClient:
         except JSONDecodeError:
             logging.error("Loading JSON response failed, see full response below:")
             logging.error(response.text)
+            raise RuntimeError("Loading JSON response failed")
+
         if not json["success"]:
             raise RuntimeError("Received error from API: " + json["msg"])
 
         return json["payload"]
-
-    @staticmethod
-    def formdata_encode(data):
-        """
-        >>> ApiClient.formdata_encode({})
-        {}
-        >>> ApiClient.formdata_encode({"hello": 2, "world": 42})
-        {'hello': 2, 'world': 42}
-        >>> ApiClient.formdata_encode({"data": [{"hello": 2, "world": 42}, {"how": 10, "are": 20, "you": 30}]})
-        {'data[0][hello]': 2, 'data[0][world]': 42, 'data[1][how]': 10, 'data[1][are]': 20, 'data[1][you]': 30}
-        """
-
-        def inner(prefix, data, wrap_key=False):
-            if isinstance(data, list) or isinstance(data, set):
-                data = dict(enumerate(data))
-
-            if not isinstance(data, dict):
-               yield prefix, data
-               return
-
-            for key, value in data.items():
-                if wrap_key:
-                    key = "[{}]".format(key)
-                yield from inner(prefix + key, value, True)
-
-        return dict(inner("", data))
 

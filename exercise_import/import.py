@@ -150,11 +150,11 @@ def get_custom_judges(tests):
         if test.has_custom_judge:
             yield test.custom_judge_binary
 
-def make_exercise_config(config, content_soup, exercise_file_data, pipelines, tests):
+def make_exercise_config(config, content_soup, exercise_files, pipelines, tests):
     exercise_config = []
 
     pipeline_map = {item["name"]: item["id"] for item in pipelines}
-    input_files = {name: hashName for name, hashName in exercise_file_data.items() if name.endswith(".in")}
+    input_files = [name for name in exercise_files if name.endswith(".in")]
 
     for extension in load_allowed_extensions(content_soup):
         environment = config.extension_to_runtime[extension]
@@ -178,78 +178,34 @@ def make_exercise_config(config, content_soup, exercise_file_data, pipelines, te
                 continue
 
             if not input_stdio:
-                relevant_inputs = {
-                    name: hashName for name, hashName in input_files.items()
-                    if name.startswith("{}.".format(test.number))
-                } 
-                test_inputs = list(relevant_inputs.values())
-                test_input_names = [test.in_file] if test.in_type == "file" else [name[name.index(".") + 1 : ] for name in relevant_inputs.keys()]
+                test_inputs = [name for name in input_files if name.startswith("{}.".format(test.number))]
+                test_input_names = [test.in_file] if test.in_type == "file" else [name[name.index(".") + 1 : ] for name in test_inputs]
             else:
-                test_inputs = [input_files["{}.in".format(test.number)]]
-                test_input_names = None
+                test_inputs = ["{}.in".format(test.number)]
+                test_input_names = ["{}.in".format(test.number)]
 
-            variables = []
-            output_name = "{}.out".format(test.number)
-
-            variables.append({
-                "name": "input-files" if not input_stdio else "input-file",
-                "type": "remote-file[]" if not input_stdio else "remote-file",
-                "value": test_inputs
-            })
-
-            variables.append({
-                "name": "stdin-file",
-                "type": "remote-file",
-                "value": test_inputs[0] if input_stdio else ""
-            })
-
-            if output_name in exercise_file_data:
-                expected_output = exercise_file_data[output_name]
-            elif test.in_type != "dir": # If there is no file with expected output, use first input file instead
-                expected_output = test_inputs[0]
-            else:
-                logging.error("Invalid test configuration for test %d", test.number)
-                continue
-
-            variables.append({
-                "name": "expected-output",
-                "type": "remote-file",
-                "value": expected_output
-            })
-
-            if test.has_custom_judge:
-                judge_name = Path(test.custom_judge_binary).name
-                custom_judge = exercise_file_data[judge_name]
-                custom_judge_args = test.custom_judge_args
-                judge_type = ""
-            else:
-                custom_judge = ""
-                custom_judge_args = ""
-                judge_type = config.judges.get(test.judge, test.judge)
-
-            variables.append({
-                "name": "custom-judge",
-                "type": "file",
-                "value": custom_judge
-            })
-
-            variables.append({
-                "name": "judge-args",
-                "type": "string[]",
-                "value": custom_judge_args
-            })
-
-            variables.append({
-                "name": "judge-type",
-                "type": "string",
-                "value": judge_type
-            })
-
-            variables.append({
-                "name": "run-args",
-                "type": "string[]",
-                "value": convert_args(test)
-            })
+            variables = [
+                {
+                    "name": "input-files" if not input_stdio else "input-file",
+                    "type": "remote-file[]" if not input_stdio else "remote-file",
+                    "value": test_inputs
+                },
+                {
+                    "name": "expected-output",
+                    "type": "remote-file",
+                    "value": "{}.out".format(test.number)
+                },
+                {
+                    "name": "judge-type",
+                    "type": "string",
+                    "value": config.judges.get(test.judge, test.judge)
+                },
+                {
+                    "name": "run-args",
+                    "type": "string[]",
+                    "value": convert_args(test)
+                }
+            ]
 
             if not input_stdio:
                 variables.append({
@@ -323,12 +279,12 @@ def details(exercise_folder):
     config = Config.load(Path.cwd() / "import-config.yml")
     api = ApiClient(config.api_url, config.api_token)
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
-    files = defaultdict(lambda: "random-file-uuid")
+    files = []
 
     print("### Exercise files")
     for name, path in load_exercise_files(exercise_folder):
         print(f"{path} as {name}")
-        files.get(name) # Make sure the keys are present in the exercise file map
+        files.append(name) # Make sure the file names are present in the exercise file list
 
     print("### Exercise configuration")
     pprint(make_exercise_config(config, soup, files, api.get_pipelines(), tests))
@@ -495,7 +451,7 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
         attachment_ids.add(upload_file(api, path)["id"])
 
     if attachment_ids:
-        api.add_exercise_attachments(exercise_id, attachment_ids)
+        api.add_exercise_attachments(exercise_id, list(attachment_ids))
 
     logging.info("Uploaded attachments associated with the exercise")
 
@@ -508,9 +464,9 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
     details = load_details(content_soup)
     details["localizedTexts"] = [{
         "locale": config.locale,
-        "name": details["name"],
-        "description": details["description"],
-        "text": text
+        "name": details["name"] or "",
+        "description": details["description"] or "",
+        "text": text or ""
     }]
 
     del details["name"]
@@ -573,7 +529,7 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
     exercise_config = make_exercise_config(
         config,
         content_soup,
-        {item["name"]: item["hashName"] for item in api.get_exercise_files(exercise_id)},
+        [item["name"] for item in api.get_exercise_files(exercise_id)],
         api.get_pipelines(),
         tests
     )

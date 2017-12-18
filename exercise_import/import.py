@@ -8,6 +8,7 @@ from pathlib import Path
 from html2text import html2text
 from collections import defaultdict
 from pprint import pprint
+from datetime import datetime, timedelta
 
 from exercise_import.codex_config import load_codex_test_config
 from exercise_import.api import ApiClient
@@ -416,6 +417,48 @@ def evaluate_all_rs(config_path):
                 api.evaluate_reference_solutions(exercise["id"])
             except Exception as e:
                 logging.error("Error in exercise {}: {}".format(exercise["id"], str(e)))
+
+@cli.command()
+@click.option("config_path", "-c")
+@click.option("threshold", "-t")
+def check_rs_evaluations(config_path, threshold):
+    """
+    Find exercises that had no successful reference solution evaluation in 
+    a given number of days
+    """
+    config = Config.load(Path.cwd() / (config_path or "import-config.yml"))
+    api = ApiClient(config.api_url, config.api_token)
+
+    for exercise in api.get_exercises():
+        solutions = api.get_reference_solutions(exercise["id"])
+        if not solutions:
+            logging.error("Exercise %s has no reference solutions", exercise["id"])
+            continue
+
+
+        found = False
+        found_recent = False
+
+        for solution in solutions:
+            for evaluation in api.get_reference_solution_evaluations(solution["id"]):
+                status_ok = evaluation["evaluationStatus"] == "done"
+                submission_timestamp = int(evaluation["submittedAt"])
+                submission_timestamp = max(0, submission_timestamp)
+                submission_date = datetime.fromtimestamp(submission_timestamp)
+                threshold_date = datetime.utcnow() - timedelta(days=int(threshold))
+                recent =  submission_date >= threshold_date
+                if status_ok:
+                    found = True
+                    if recent:
+                        found_recent = True
+                        break
+
+        if not found_recent:
+            if found:
+                logging.error("Exercise %s has no recent successful evaluations", exercise["id"])
+            else:
+                logging.error("Exercise %s has never had any successful evaluations", exercise["id"])
+
 
 @cli.command()
 @click.option("config_path", "-c")

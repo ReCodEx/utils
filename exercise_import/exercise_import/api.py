@@ -76,6 +76,9 @@ class ApiClient:
     def set_exercise_tests(self, exercise_id, tests):
         self.post("/exercises/{}/tests".format(exercise_id), data={"tests": tests})
 
+    def get_exercise_tests(self, exercise_id):
+        return self.get("/exercises/{}/tests".format(exercise_id))
+
     def update_limits(self, exercise_id, environment_id, limits):
         self.post("/exercises/{}/environment/{}/limits".format(exercise_id, environment_id), data={"limits": limits})
 

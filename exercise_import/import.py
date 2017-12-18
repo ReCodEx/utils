@@ -122,7 +122,7 @@ def get_custom_judges(tests):
         if test.has_custom_judge:
             yield test.custom_judge_binary
 
-def make_exercise_config(config, content_soup, exercise_files, pipelines, tests):
+def make_exercise_config(config, content_soup, exercise_files, pipelines, tests, test_id_map):
     exercise_config = []
 
     pipeline_map = {item["name"]: item["id"] for item in pipelines}
@@ -208,7 +208,7 @@ def make_exercise_config(config, content_soup, exercise_files, pipelines, tests)
                 })
 
             env_tests.append({
-                "name": test.name,
+                "name": test_id_map[test.name],
                 "pipelines": [
                     {
                         "name": build_pipeline,
@@ -265,6 +265,7 @@ def details(exercise_folder):
     config = Config.load(Path.cwd() / "import-config.yml")
     api = ApiClient(config.api_url, config.api_token)
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
+    test_id_map = {test.name: test.number for test in tests}
     files = []
 
     print("### Exercise files")
@@ -273,7 +274,7 @@ def details(exercise_folder):
         files.append(name) # Make sure the file names are present in the exercise file list
 
     print("### Exercise configuration")
-    pprint(make_exercise_config(config, soup, files, api.get_pipelines(), tests))
+    pprint(make_exercise_config(config, soup, files, api.get_pipelines(), tests, test_id_map))
     print()
 
 @cli.command()
@@ -497,6 +498,7 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
     tests = load_codex_test_config(Path(exercise_folder) / "testdata" / "config")
 
     api.set_exercise_tests(exercise_id, [{"name": test.name} for test in tests])
+    test_id_map = {test["name"]: test["id"] for test in api.get_exercise_tests(exercise_id)}
     logging.info("Exercise tests configured")
 
     # Upload custom judges
@@ -517,7 +519,8 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
         content_soup,
         [item["name"] for item in api.get_exercise_files(exercise_id)],
         api.get_pipelines(),
-        tests
+        tests,
+        test_id_map
     )
 
     api.update_exercise_config(exercise_id, exercise_config)

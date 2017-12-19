@@ -177,11 +177,6 @@ def make_exercise_config(config, content_soup, exercise_files, pipelines, tests,
                     "value": test_inputs
                 },
                 {
-                    "name": "expected-output",
-                    "type": "remote-file",
-                    "value": "{}.out".format(test.number)
-                },
-                {
                     "name": "judge-type",
                     "type": "string",
                     "value": config.judges.get(test.judge, test.judge)
@@ -192,6 +187,19 @@ def make_exercise_config(config, content_soup, exercise_files, pipelines, tests,
                     "value": convert_args(test)
                 }
             ]
+
+            if "$TDIR/$TEST.ok" in test.judge_args:
+                variables.append({
+                    "name": "expected-output",
+                    "type": "remote-file",
+                    "value": "{}.out".format(test.number)
+                })
+            else:  # Test uses a custom judge that does not need an example output
+                variables.append({
+                    "name": "expected-output",
+                    "type": "remote-file",
+                    "value": "{}.in".format(test.number)
+                })
 
             if not input_stdio:
                 variables.append({

@@ -188,6 +188,12 @@ def make_exercise_config(config, content_soup, exercise_files, pipelines, tests,
                 }
             ]
 
+            variables.append({
+                "name": "stdin-file",
+                "type": "remote-file",
+                "value": test_inputs[0] if input_stdio else ""
+	    })
+
             if "$TDIR/$TEST.ok" in test.judge_args:
                 variables.append({
                     "name": "expected-output",
@@ -200,6 +206,40 @@ def make_exercise_config(config, content_soup, exercise_files, pipelines, tests,
                     "type": "remote-file",
                     "value": "{}.in".format(test.number)
                 })
+
+            if test.has_custom_judge:
+                custom_judge = Path(test.custom_judge_binary).name
+                custom_judge_args = test.custom_judge_args[:-2]  # TODO temporary solution - removes $PDIR/$TEST.in $TDIR/$TEST.out from the end
+                judge_type = ""
+
+            else:
+                custom_judge = ""
+                custom_judge_args = ""
+                judge_type = config.judges.get(test.judge, test.judge)
+
+            variables.append({
+                "name": "custom-judge",
+                "type": "remote-file",
+                "value": custom_judge
+            })
+
+            variables.append({
+                "name": "judge-args",
+                "type": "string[]",
+                "value": custom_judge_args
+            })
+
+            variables.append({
+                "name": "judge-type",
+                "type": "string",
+                "value": judge_type
+            })
+
+            variables.append({
+                "name": "run-args",
+                "type": "string[]",
+                "value": convert_args(test)
+})
 
             if not input_stdio:
                 variables.append({
@@ -540,7 +580,7 @@ def run(exercise_folder, group_id, config_path=None, exercise_id=None):
 
         for test in tests:
             key = extension if extension in test.limits.keys() else "default"
-            limits_config[test.name] = {
+            limits_config[test_id_map[test.name]] = {
                     "wall-time": test.limits[key].time_limit,
                     "memory": test.limits[key].mem_limit
             }

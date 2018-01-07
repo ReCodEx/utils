@@ -2,17 +2,20 @@
 
 import sys
 from pathlib import Path
+from pkgutil import read_code
 
 # Remove the name of the runner
 sys.argv.pop(0)
 
 # Read the input file
 script = Path(sys.argv[0])
-code = script.read_bytes()
 
-# If we received a source file, compile it (and leave bytecode as is)
-if script.suffix != ".pyc":
-    code = compile(script.read_bytes(), str(script), "exec")
+with script.open('rb') as script_file:
+    # If we received a source file, compile it (and leave bytecode as is)
+    if script.suffix != ".pyc":
+        code = compile(script_file.read(), str(script), "exec")
+    else:
+        code = read_code(script_file)
 
 # Run the code and convert exceptions to error codes
 try:

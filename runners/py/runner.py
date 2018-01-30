@@ -20,21 +20,34 @@ with script.open('rb') as script_file:
 # Run the code and convert exceptions to error codes
 try:
     exec(code)
+except AssertionError:
+    sys.exit(101)
+except TypeError:
+    sys.exit(102)
+except NameError:
+    sys.exit(103)
+except EOFError:
+    sys.exit(104)
+except AttributeError:
+    sys.exit(105)
 except IOError:
-    sys.exit(106);
+    sys.exit(106)
 except OSError:
     sys.exit(107)
-except IndexError:
-    sys.exit(108)
-except KeyError:
+except LookupError:
     sys.exit(108)
 except ValueError:
-    sys.exit(108)
-except ZeroDivisionError:
     sys.exit(109)
-except ArithmeticError:
+except ZeroDivisionError:
     sys.exit(110)
-except ModuleNotFoundError:
+except ArithmeticError:
     sys.exit(111)
+except ImportError:
+    sys.exit(112)
+except MemoryError:
+    sys.exit(113)
+except SyntaxError:
+    sys.exit(114)
 except BaseException:
     sys.exit(1)
+

@@ -1,6 +1,6 @@
 %define name isolate
-%define version 1.4.1
-%define release 1
+%define version 1.5
+%define release 2
 # %define boxdir %{_sharedstatedir}/%{name}
 %define boxdir /var/local/lib/%{name}
 %define confdir %{_sysconfdir}/%{name}
@@ -17,6 +17,8 @@ Prefix: %{_prefix}
 Url: https://github.com/ioi/isolate
 BuildRequires: asciidoc libcap-devel
 Requires: libcap
+
+%global debug_package %{nil}
 
 %description
 Isolate is a sandbox built to safely run untrusted executables, offering them a

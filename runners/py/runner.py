@@ -48,6 +48,7 @@ except MemoryError:
     sys.exit(113)
 except SyntaxError:
     sys.exit(114)
+except SystemExit:
+    raise
 except BaseException:
     sys.exit(1)
-

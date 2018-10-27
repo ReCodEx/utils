@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 public class javarun {
@@ -29,8 +28,8 @@ public class javarun {
         if (command.equals("scan")) {
             scanDir(new File(".")).forEach(cls -> System.out.println(cls.getName()));
         } else if (command.equals("run")) {
-            Stream<Class<?>> candidateCls = scanDir(new File("."));
-            long candidateClsCount = candidateCls.count();
+            Object[] candidateCls = scanDir(new File(".")).toArray();
+            long candidateClsCount = candidateCls.length;
 
             if (candidateClsCount == 0) {
                 System.err.println("No main class found");
@@ -40,10 +39,10 @@ public class javarun {
                 System.exit(103);
             }
 
-            Optional<Class<?>> cls = candidateCls.findFirst();
+            Class<?> cls = (Class<?>) candidateCls[0];
             Method main;
             try {
-                main = cls.get().getMethod("main", String[].class);
+                main = cls.getMethod("main", String[].class);
             } catch (NoSuchMethodException e) {
                 assert false;
                 return;

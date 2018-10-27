@@ -1,8 +1,6 @@
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -10,9 +8,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -22,7 +18,7 @@ public class javarun {
         new javarun().run(args);
     }
 
-    public void run(String[] args) {
+    private void run(String[] args) {
         if (args.length == 0) {
             help(System.err);
             System.exit(1);
@@ -33,22 +29,18 @@ public class javarun {
         if (command.equals("scan")) {
             scanDir(new File(".")).forEach(cls -> System.out.println(cls.getName()));
         } else if (command.equals("run")) {
-            String stdin = System.getProperty("codex.stdin");
-            if (stdin != null) {
-                try {
-                    System.setIn(new FileInputStream(stdin));
-                } catch (FileNotFoundException e) {
-                    System.err.printf("Input file %s was not found%n", stdin);
-                }
-            }
+            Stream<Class<?>> candidateCls = scanDir(new File("."));
+            long candidateClsCount = candidateCls.count();
 
-            Optional<Class<?>> cls = scanDir(new File(".")).findFirst();
-
-            if (!cls.isPresent()) {
+            if (candidateClsCount == 0) {
                 System.err.println("No main class found");
                 System.exit(102);
+            } else if (candidateClsCount > 1) {
+                System.err.println("Multiple main classes found");
+                System.exit(103);
             }
 
+            Optional<Class<?>> cls = candidateCls.findFirst();
             Method main;
             try {
                 main = cls.get().getMethod("main", String[].class);
@@ -57,7 +49,7 @@ public class javarun {
                 return;
             }
 
-            Object[] mainArgs = Arrays.copyOfRange(args, 1, args.length);
+            String[] mainArgs = Arrays.copyOfRange(args, 1, args.length);
             main.setAccessible(true);
 
             try {
@@ -102,12 +94,12 @@ public class javarun {
         }
     }
 
-    public void help(PrintStream stream) {
-        stream.println("./javarun.groovy scan - print a list of classes found in current directory (and subdirectories) that contain a main() method");
-        stream.println("./javarun.groovy run - run the first main() method found in current directory (and subdirectories)");
+    private void help(PrintStream stream) {
+        stream.println("java javarun scan - print a list of classes found in current directory (and subdirectories) that contain a main() method");
+        stream.println("java javarun run - run the first main() method found in current directory (and subdirectories)");
     }
 
-    public String getClassName(Path file) {
+    private String getClassName(Path file) {
         String[] parts = file.toString().split("/");
         String[] relevant = Arrays.copyOfRange(parts, 1, parts.length);
 
@@ -117,9 +109,9 @@ public class javarun {
         return ((String) (className));
     }
 
-    public Stream<Class<?>> scanDir(File dir) {
+    private Stream<Class<?>> scanDir(File dir) {
         try {
-            final URLClassLoader loader = new URLClassLoader(new URL[]{dir.toURL()});
+            final URLClassLoader loader = new URLClassLoader(new URL[]{dir.toURI().toURL()});
 
             return Files.walk(dir.toPath())
                     .filter(Files::isRegularFile)

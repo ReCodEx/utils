@@ -9,3 +9,4 @@ installation/virtual_*
 .idea/
 *.pyc
 
+/regression_tests/.vscode

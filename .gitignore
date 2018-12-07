@@ -10,3 +10,5 @@ installation/virtual_*
 *.pyc
 
 /regression_tests/.vscode
+/lowlevel_db_ops/config/config.ini.php
+/lowlevel_db_ops/vendor

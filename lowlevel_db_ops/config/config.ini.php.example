@@ -1,0 +1,9 @@
+<?php
+
+return [
+    'driver'   => 'mysqli',
+    'host'     => 'localhost',
+    'username' => 'recodex-api',
+    'password' => 'recodex',
+    'database' => 'recodex-api',
+];

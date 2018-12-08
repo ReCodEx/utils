@@ -19,7 +19,12 @@ with script.open('rb') as script_file:
 
 # Run the code and convert exceptions to error codes
 try:
-    exec(code)
+    try:
+        exec(code)
+    except:
+        import traceback
+        traceback.print_exc()
+        raise
 except AssertionError:
     sys.exit(101)
 except TypeError:

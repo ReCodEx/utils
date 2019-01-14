@@ -49,13 +49,15 @@ class Assignments extends BaseCommand
 		$relevant = 0;
 		foreach ($failed as $assignment) {
 			$deadline = $assignment->allow_second_deadline ? $assignment->second_deadline : $assignment->first_deadline;
-			if ($deadline->diff(new DateTime())->days > 68) continue;	// too old
+			$deadlineDiff = $deadline->diff(new DateTime());
+			if (!$deadlineDiff->invert && $deadlineDiff->days > 74) continue;	// too old
 			
 			++$relevant;
 			echo "Integrity failed in assignment ", $assignment->id,
 				" of exercise ", $assignment->exercise_id, ": ", $this->getAssignmentName($assignment->id), "\n";
 			echo "Last deadline: ", $deadline->format('j.n.Y H:i'), "\n";
-			echo "In group ", $assignment->group_id, ": ", $this->getGroupName($assignment->group_id), "\n";
+			echo "In group ", $assignment->group_id, ": ", $this->getGroupName($assignment->group_id),
+				"  (", join(", ", $this->getGroupAdmins($assignment->group_id)), ")\n";
 			echo "Files missing: ", join(", ", $missingFiles[$assignment->id]), "\n";
 			echo "-----------------------\n\n";
 		}

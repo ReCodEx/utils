@@ -75,4 +75,11 @@ class BaseCommand
 			JOIN uploaded_file AS f ON f.id = ef.supplementary_exercise_file_id
 			WHERE ef.exercise_id = ?', $exerciseId);
 	}
+
+
+	protected function getGroupAdmins($groupId)
+	{
+		return $this->db->fetchPairs('SELECT u.id AS id, CONCAT(u.first_name, \' \', u.last_name) AS username
+			FROM group_user AS gu JOIN user AS u ON gu.user_id = u.id WHERE gu.group_id = ?', $groupId);
+	}
 }

@@ -50,6 +50,8 @@ def update_spec_file(spec_file, hexsha, version):
                 f.write("%define unmangled_version {}\n".format(hexsha))
             elif line.startswith("%define version"):
                 f.write("%define version {}\n".format(version))
+            elif line.startswith("%define release"):
+                f.write("%define release 1\n")
             else:
                 f.write(line)
 

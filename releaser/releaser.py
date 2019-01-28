@@ -91,6 +91,20 @@ def create_tag(repo, version):
 #    result = build_proxy.create_from_file("semai", "ReCodEx", spec_file)
 #    print(result)
 
+def get_changelog(repo):
+    tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+    start_tag = tags[-1]
+    if len(tags) > 1:
+        revisions = "{}...{}".format(start_tag, tags[-2])
+    else:
+        revisions = start_tag
+
+    commits = repo.iter_commits(revisions)
+    lines = []
+    for commit in commits:
+        lines.append("{} {}".format(commit.hexsha, commit.summary))
+    body_commits = "\n".join(lines)
+    return "### Changelog\n-\n\n### Commits\n{}".format(body_commits)
 
 def main():
     print('Release script started')
@@ -137,6 +151,10 @@ def main():
         #     print("- COPR builds created")
 
         print("Finished! The project is successfully released")
+
+        print("\nGenerated changelog:\n--------------------\n")
+        changelog = get_changelog(repo)
+        print(changelog)
 
     except Exception as e:
         die("type: {}, data: {}".format(type(e).__name__, str(e)))

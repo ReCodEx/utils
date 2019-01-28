@@ -64,7 +64,7 @@ def commit_spec_file(repo, spec_file, version):
 
 def create_tag(repo, version):
     new_tag = repo.create_tag("v{}".format(version), message="Automatic release of version {}".format(version))
-    #repo.remotes.origin.push(new_tag)
+    repo.remotes.origin.push(new_tag)
 
 
 #def build_in_copr(spec_file):

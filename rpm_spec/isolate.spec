@@ -1,6 +1,6 @@
 %define name isolate
-%define version 1.5
-%define release 2
+%define version 1.7
+%define release 1
 # %define boxdir %{_sharedstatedir}/%{name}
 %define boxdir /var/local/lib/%{name}
 %define confdir %{_sysconfdir}/%{name}
@@ -15,7 +15,7 @@ License: GPLv2+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 Url: https://github.com/ioi/isolate
-BuildRequires: asciidoc libcap-devel
+BuildRequires: gcc asciidoc libcap-devel
 Requires: libcap
 
 %global debug_package %{nil}

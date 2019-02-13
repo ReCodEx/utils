@@ -42,7 +42,7 @@ def get_repo(path=None):
 
 
 def update_spec_file(spec_file, hexsha, version):
-    with open(spec_file, "r+") as f:
+    with open(spec_file, "r+", newline='\n') as f:
         content = f.readlines()
         f.seek(0)
         for line in content:
@@ -64,7 +64,7 @@ def commit_spec_file(repo, spec_file, version):
 
 def create_tag(repo, version):
     new_tag = repo.create_tag("v{}".format(version), message="Automatic release of version {}".format(version))
-    #repo.remotes.origin.push(new_tag)
+    repo.remotes.origin.push(new_tag)
 
 
 #def build_in_copr(spec_file):

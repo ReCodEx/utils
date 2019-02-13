@@ -42,7 +42,7 @@ def get_repo(path=None):
 
 
 def update_spec_file(spec_file, hexsha, version):
-    with open(spec_file, "r+") as f:
+    with open(spec_file, "r+", newline='\n') as f:
         content = f.readlines()
         f.seek(0)
         for line in content:

@@ -1,5 +1,5 @@
 %define name isolate
-%define version 1.7
+%define version 1.8.1
 %define release 1
 # %define boxdir %{_sharedstatedir}/%{name}
 %define boxdir /var/local/lib/%{name}

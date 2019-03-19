@@ -61,6 +61,13 @@ class BaseCommand
 		return yaml_parse($configYaml);
 	}
 
+	protected function getExerciseTestsByName($exerciseId)
+	{
+		return $this->db->fetchPairs('SELECT et.name, et.id FROM exercise_test AS et
+			JOIN exercise_exercise_test AS eet ON eet.exercise_test_id = et.id
+			WHERE eet.exercise_id = ?', $exerciseId);
+	}
+
 	
 	protected function getAssignmentSupplementaryFiles($assignmentId)
 	{
@@ -81,5 +88,11 @@ class BaseCommand
 	{
 		return $this->db->fetchPairs('SELECT u.id AS id, CONCAT(u.first_name, \' \', u.last_name) AS username
 			FROM group_user AS gu JOIN user AS u ON gu.user_id = u.id WHERE gu.group_id = ?', $groupId);
+	}
+
+
+	protected function getCommentText($id)
+	{
+		return $this->db->fetchSingle("SELECT `text` FROM comment WHERE id = ?", $id);
 	}
 }

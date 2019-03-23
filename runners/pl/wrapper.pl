@@ -12,7 +12,7 @@ recodex_showVars(VarNames, Solution) :-
     maplist(recodex_showVar, VarNames, Solution, Nums), nl.
 
 % helper predicate for unzipping
-eq(A = B, A, B).
+recodex_eq(A = B, A, B).
 
 % Handle queries with no variables: just print 'true' or 'false'.
 recodex_perform_query(Query, []) :-
@@ -25,7 +25,7 @@ recodex_perform_query(Query, []) :-
 % of an anonymous variable.  findall succeeds only once and generates a single list.
 recodex_perform_query(Query, VN) :-
     VN = [_ | _],                  % matches a non-empty list, e.g. ['X'=_8242, 'Y'=_8248]
-    maplist(eq, VN, Names, Vars),  % unzip into Names = ['X', 'Y'], Vars = [_8242, _8248]
+    maplist(recodex_eq, VN, Names, Vars),  % unzip into Names = ['X', 'Y'], Vars = [_8242, _8248]
     (findall(Vars, Query, Solutions) -> true ; Solutions = []),  % find all solutions
     sort(Solutions, SortedSolutions),
     maplist(recodex_showVars(Names), SortedSolutions).     % print them nicely

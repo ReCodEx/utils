@@ -33,3 +33,8 @@ Some interprets has to be called in special manner (e.g., Python) or require alt
 This concerns judges written in Java or C#, so they need JRE or Mono to execute them. At present, it is rather tricky to use these judges. In general, you need to write a bootstrap wrapper (e.g., as a script judge), which will start them. The problem is that under current configuration, a judge has to be a single file, so you need a safe way how to wrap the Java/C# judge into the script file itself (which may be rather ugly).
 
 There is one exception -- *Data-only* exercises. Data-only exercise allows *extra files* to be passed on to the judge. So jar or C# executable can be passed on to the judge as extra file and judge (e.g., bash script) only executes this file and pass on the command line arguments.
+
+
+## Judges in Data-only Exercises
+
+Data-only exercises need judges as well. In fact, in data-only exercise, the judge takes place of regular solution execution, so it is subjected to time and memory limits. There is a slight difference in data-only judges in the interface as this judge does not get any arguments automatically. Instead, it may get custom (execution) arguments set in the config form. Submitted files along with the script itself and extra files end up in one directory which is the working directory when the script is executed. Please note that the sandbox may have additional temporary files in there like a `.stdout` file which collects the std. output of the judge.  

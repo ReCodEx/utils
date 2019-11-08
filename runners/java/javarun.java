@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class javarun {
@@ -23,12 +24,17 @@ public class javarun {
             System.exit(1);
         }
 
+        // parse arguments, first is command, second might be base directory
         String command = args[0];
+        String dir = ".";
+        if (args.length > 1) {
+            dir = args[1];
+        }
 
         if (command.equals("scan")) {
-            scanDir(new File(".")).forEach(cls -> System.out.println(cls.getName()));
+            scanDir(new File(dir)).forEach(cls -> System.out.println(cls.getName()));
         } else if (command.equals("run")) {
-            Object[] candidateCls = scanDir(new File(".")).toArray();
+            Object[] candidateCls = scanDir(new File(dir)).toArray();
             long candidateClsCount = candidateCls.length;
 
             if (candidateClsCount == 0) {
@@ -94,12 +100,12 @@ public class javarun {
     }
 
     private void help(PrintStream stream) {
-        stream.println("java javarun scan - print a list of classes found in current directory (and subdirectories) that contain a main() method");
-        stream.println("java javarun run - run the first main() method found in current directory (and subdirectories)");
+        stream.println("java javarun scan [dir] - print a list of classes found recursively in given directory or in current directory (if directory is not given) that contain a main() method");
+        stream.println("java javarun run [dir] - run the first main() method found recursively in given directory or in current directory (if directory is not given)");
     }
 
     private String getClassName(Path file) {
-        String[] parts = file.toString().split("/");
+        String[] parts = file.toString().split(Pattern.quote(File.separator));
         String[] relevant = Arrays.copyOfRange(parts, 1, parts.length);
 
         String name = String.join(".", relevant);

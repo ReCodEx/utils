@@ -19,17 +19,15 @@ public class javarun {
     }
 
     private void run(String[] args) {
-        if (args.length == 0) {
+        if (args.length < 2) {
             help(System.err);
             System.exit(1);
         }
 
-        // parse arguments, first is command, second might be base directory
+        // parse arguments, first is command
         String command = args[0];
-        String dir = ".";
-        if (args.length > 1) {
-            dir = args[1];
-        }
+        // second argument should be base directory
+        String dir = args[1];
 
         if (command.equals("scan")) {
             scanDir(new File(dir)).forEach(cls -> System.out.println(cls.getName()));
@@ -54,10 +52,10 @@ public class javarun {
                 return;
             }
 
-            String[] mainArgs = Arrays.copyOfRange(args, 1, args.length);
             main.setAccessible(true);
 
             try {
+                String[] mainArgs = Arrays.copyOfRange(args, 2, args.length);
                 main.invoke(null, (Object) mainArgs);
             } catch (OutOfMemoryError ex) {
                 System.exit(100);
@@ -100,8 +98,8 @@ public class javarun {
     }
 
     private void help(PrintStream stream) {
-        stream.println("java javarun scan [dir] - print a list of classes found recursively in given directory or in current directory (if directory is not given) that contain a main() method");
-        stream.println("java javarun run [dir] - run the first main() method found recursively in given directory or in current directory (if directory is not given)");
+        stream.println("java javarun scan DIR - print a list of classes found recursively in given directory that contain a main() method");
+        stream.println("java javarun run DIR - run the first main() method found recursively in given directory");
     }
 
     private String getClassName(Path file) {

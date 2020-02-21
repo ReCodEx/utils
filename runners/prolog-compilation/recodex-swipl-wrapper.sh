@@ -2,22 +2,19 @@
 
 # Yay, another wrapper by Martin Krulis.
 # Captures all the outputs (stderr redirected to stdout).
-# Any output is treated as error.
+# Warnings are filtered out by sed and if any output remains,
+# it is treated as compilation error.
+# (This is necessary, since swipl returns 0 even if compilation fails.)
 
 EXECUTABLE=$1
 shift
 
 OUTPUT=`"$EXECUTABLE" "$@" 2>&1`
+ERRORS=`echo "$OUTPUT" | sed -e '/^Warning:/,+1d'`
 RES=$?
-
-if [ $RES -ne 0 ]; then
-	echo "$OUTPUT"
-	exit $RES
+if [[ $RES == 0 && "$ERRORS" != "" ]]; then
+	RES=1
 fi
 
-if [ ! -z "$OUTPUT" ]; then
-	echo "$OUTPUT"
-	exit 1
-fi
-
-exit 0
+echo "$OUTPUT"
+exit $RES

@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class javarun {
@@ -18,17 +19,20 @@ public class javarun {
     }
 
     private void run(String[] args) {
-        if (args.length == 0) {
+        if (args.length < 2) {
             help(System.err);
             System.exit(1);
         }
 
+        // parse arguments, first is command
         String command = args[0];
+        // second argument should be base directory
+        String dir = args[1];
 
         if (command.equals("scan")) {
-            scanDir(new File(".")).forEach(cls -> System.out.println(cls.getName()));
+            scanDir(new File(dir)).forEach(cls -> System.out.println(cls.getName()));
         } else if (command.equals("run")) {
-            Object[] candidateCls = scanDir(new File(".")).toArray();
+            Object[] candidateCls = scanDir(new File(dir)).toArray();
             long candidateClsCount = candidateCls.length;
 
             if (candidateClsCount == 0) {
@@ -48,10 +52,10 @@ public class javarun {
                 return;
             }
 
-            String[] mainArgs = Arrays.copyOfRange(args, 1, args.length);
             main.setAccessible(true);
 
             try {
+                String[] mainArgs = Arrays.copyOfRange(args, 2, args.length);
                 main.invoke(null, (Object) mainArgs);
             } catch (OutOfMemoryError ex) {
                 System.exit(100);
@@ -94,12 +98,12 @@ public class javarun {
     }
 
     private void help(PrintStream stream) {
-        stream.println("java javarun scan - print a list of classes found in current directory (and subdirectories) that contain a main() method");
-        stream.println("java javarun run - run the first main() method found in current directory (and subdirectories)");
+        stream.println("java javarun scan DIR - print a list of classes found recursively in given directory that contain a main() method");
+        stream.println("java javarun run DIR - run the first main() method found recursively in given directory");
     }
 
     private String getClassName(Path file) {
-        String[] parts = file.toString().split("/");
+        String[] parts = file.toString().split(Pattern.quote(File.separator));
         String[] relevant = Arrays.copyOfRange(parts, 1, parts.length);
 
         String name = String.join(".", relevant);

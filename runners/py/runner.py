@@ -53,6 +53,8 @@ except MemoryError:
     sys.exit(113)
 except SyntaxError:
     sys.exit(114)
+except RecursionError:
+    sys.exit(115)
 except SystemExit:
     raise
 except BaseException:

@@ -61,6 +61,16 @@ class BaseCommand
 		return yaml_parse($configYaml);
 	}
 
+	protected function getExercisesConfigs()
+	{
+		return $this->db->fetchPairs('SELECT id, config FROM exercise_config');
+	}
+
+	protected function getExercisesScoreConfigs()
+	{
+		return $this->db->fetchPairs('SELECT id, score_config FROM exercise WHERE deleted_at IS NULL');
+	}
+
 	protected function getExerciseTestsByName($exerciseId)
 	{
 		return $this->db->fetchPairs('SELECT et.name, et.id FROM exercise_test AS et
@@ -94,5 +104,27 @@ class BaseCommand
 	protected function getCommentText($id)
 	{
 		return $this->db->fetchSingle("SELECT `text` FROM comment WHERE id = ?", $id);
+	}
+
+	protected function getPipelineConfigs()
+	{
+		return $this->db->fetchPairs('SELECT p.id, pc.pipeline_config FROM pipeline AS p JOIN pipeline_config AS pc ON p.pipeline_config_id = pc.id');
+	}
+
+	protected function getRuntimeConfigs()
+	{
+		return $this->db->fetchPairs('SELECT id, default_variables FROM runtime_environment');
+	}
+
+	protected function getAllSolutionsOfEnvironment($env)
+	{
+		return $this->db->query("SELECT ass.id AS id, a.id AS assignment_id, s.author_id AS author_id, a.group_id AS group_id,
+			a.exercise_id AS exercise_id, s.created_at AS created_at,
+			(SELECT le.name FROM localized_exercise AS le JOIN exercise_localized_exercise AS ele ON ele.localized_exercise_id = le.id
+				WHERE le.locale = 'en' AND ele.exercise_id = a.exercise_id) AS name_en,
+			(SELECT le.name FROM localized_exercise AS le JOIN exercise_localized_exercise AS ele ON ele.localized_exercise_id = le.id
+				WHERE le.locale = 'cs' AND ele.exercise_id = a.exercise_id) AS name_cs
+			FROM assignment_solution AS ass JOIN solution AS s ON s.id = ass.solution_id JOIN assignment AS a ON ass.assignment_id = a.id
+			WHERE runtime_environment_id = ? ORDER BY s.created_at", $env);
 	}
 }

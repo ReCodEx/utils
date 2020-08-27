@@ -103,4 +103,29 @@ class Exercises extends BaseCommand
 			echo "-----------------------\n\n";
 		}
 	}
+
+
+	public function verifyYamlConfigs()
+	{
+		$categories = [
+			'getPipelineConfigs' => 'Pipeline configs',
+			'getRuntimeConfigs' => 'Runtime default variables',
+			'getExercisesConfigs' => 'Exercise configs',
+			'getExercisesScoreConfigs' => 'Exercise score configs',
+		];
+
+		foreach ($categories as $method => $caption) {
+			echo "$caption:\n";
+			$data = $this->$method();
+			$okCount = 0;
+			foreach ($data as $id => $yaml) {
+				if (@yaml_parse($yaml) === false) {
+					echo "$id\tWRONG!!!\n";
+				} else {
+					++$okCount;
+				}
+			}
+			echo "Total $okCount OK.\n\n";
+		}
+	}
 }

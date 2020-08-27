@@ -28,7 +28,7 @@ Script judges can be executed as well, but they must have correct first line tha
 Some interprets has to be called in special manner (e.g., Python) or require alternate config file (e.g., PHP). See the presented templates which are already tailored for our workers and their environment.
 
 
-## Judges executed in runtimes
+## Judges Executed in Runtimes
 
 This concerns judges written in Java or C#, so they need JRE or Mono to execute them. At present, it is rather tricky to use these judges. In general, you need to write a bootstrap wrapper (e.g., as a script judge), which will start them. The problem is that under current configuration, a judge has to be a single file, so you need a safe way how to wrap the Java/C# judge into the script file itself (which may be rather ugly).
 

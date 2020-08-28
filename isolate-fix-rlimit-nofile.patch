@@ -1,8 +1,6 @@
-diff --git "a/isolate.c" "b/isolate.c"
-index 68e3f9f..cc23a17 100644
---- "a/isolate.c"
-+++ "b/isolate.c"
-@@ -657,7 +657,7 @@ setup_rlimits(void)
+--- isolate/isolate.c	2020-08-28 17:53:27.186780086 +0200
++++ iso-modified/isolate.c	2020-08-28 17:45:19.147291523 +0200
+@@ -657,7 +657,7 @@
      RLIM(FSIZE, (rlim_t)fsize_limit * 1024);
  
    RLIM(STACK, (stack_limit ? (rlim_t)stack_limit * 1024 : RLIM_INFINITY));

@@ -19,7 +19,7 @@ class Runtimes extends BaseCommand
             
             $newYaml = $updater($id, $yaml);
             if ($newYaml !== $yaml) {
-                $this->db->update('exercise_config', ['config' => yaml_emit($newYaml)])->where('id = ?', $id);
+                $this->db->query('UPDATE exercise_config SET', ['config' => yaml_emit($newYaml)], 'WHERE id = ?', $id);
             }
 
             if ($printProgress) {
@@ -76,67 +76,79 @@ class Runtimes extends BaseCommand
     public function migrate($oldEnv, $newEnv)
     {
         echo "Migration of environment $oldEnv to $newEnv.\n";
+        $this->db->begin();
 
-        $tables = [
-            'exercise_runtime_environment',
-            'exercise_environment_config',
-            'exercise_limits',
-            'assignment_runtime_environment',
-            'assignment_disabled_runtime_environments',
-            'solution'
-        ];
-        foreach ($tables as $table) {
-            echo "Updating $table table...\n";
-            $this->db->update($table, ['runtime_environment_id' => $newEnv])->where('runtime_environment_id = ?', $oldEnv);
-        }
-    
-        $oldPipelines = $this->getRuntimePipelinesIds($oldEnv);
-        $newPipelines = $this->getRuntimePipelinesIds($newEnv);
-        if (count($oldPipelines) !== count($newPipelines)) {
-            echo "Unable to match pipeline!\n";
-            return;
-        }
-
-        $pipelinesMapping = $this->matchPipelinesByProperties($oldPipelines, $newPipelines);
-        if (!$pipelinesMapping) {
-            echo "Unable to match pipelines!\n";
-            return;
-        }
-
-        echo "\nThe migration will use the following mapping of the pipelines:\n";
-        foreach ($pipelinesMapping as $old => $new) {
-            echo $this->getPipeline($old)['name'], ' -> ', $this->getPipeline($new)['name'], "\n";
-        }
-
-        echo "\nUpdating exercise configs ...";
-        $this->updateExerciseConfigs(function ($id, $config) use ($oldEnv, $newEnv, $pipelinesMapping) {
-            if (in_array($oldEnv, $config['environments']) && !in_array($newEnv, $config['environments'])) {
-                // Replace environment name
-                $config['environments'] = array_map(function ($env) use ($oldEnv, $newEnv) {
-                    return ($env === $oldEnv) ? $newEnv : $env;
-                }, $config['environments']);
-
-                foreach ($config['tests'] as &$test) {
-                    if (!array_key_exists($oldEnv, $test['environments']) || array_key_exists($newEnv, $test['environments'])) {
-                        continue;
-                    }
-
-                    $newPipelines = [];
-                    foreach ($test['environments'][$oldEnv]['pipelines'] as $pipeline) {
-                        if (!array_key_exists($pipeline['name'], $pipelinesMapping)) {
-                            echo "Unable to find match for pipeline {$pipeline['name']} in exercise $id!\n";
-                            return $config;
-                        }
-                        $pipeline['name'] = $pipelinesMapping[$pipeline['name']];
-                        $newPipelines[] = $pipeline;
-                    }
-                    $test['environments'][$newEnv] = $test['environments'][$oldEnv];
-                    $test['environments'][$newEnv]['pipelines'] = $newPipelines;
-                    unset($test['environments'][$oldEnv]);
-                }
+        try {
+            $oldPipelines = $this->getRuntimePipelinesIds($oldEnv);
+            $newPipelines = $this->getRuntimePipelinesIds($newEnv);
+            if (count($oldPipelines) !== count($newPipelines)) {
+                echo "Unable to match pipeline!\n";
+                $this->db->rollback();
+                return;
             }
-            return $config;
-        }, true);
-        echo "\n";
+
+            $pipelinesMapping = $this->matchPipelinesByProperties($oldPipelines, $newPipelines);
+            if (!$pipelinesMapping) {
+                echo "Unable to match pipelines!\n";
+                $this->db->rollback();
+                return;
+            }
+
+            // Start with simple table FK updates...
+            $tables = [
+                'exercise_runtime_environment',
+                'exercise_environment_config',
+                'exercise_limits',
+                'assignment_runtime_environment',
+                'assignment_disabled_runtime_environments',
+                'solution'
+            ];
+            foreach ($tables as $table) {
+                echo "Updating $table table...\n";
+                $this->db->query("UPDATE $table SET", ['runtime_environment_id' => $newEnv], 'WHERE runtime_environment_id = ?', $oldEnv);
+            }
+        
+            echo "\nThe migration will use the following mapping of the pipelines:\n";
+            foreach ($pipelinesMapping as $old => $new) {
+                echo $this->getPipeline($old)['name'], ' -> ', $this->getPipeline($new)['name'], "\n";
+            }
+
+            echo "\nUpdating exercise configs ...";
+            $this->updateExerciseConfigs(function ($id, $config) use ($oldEnv, $newEnv, $pipelinesMapping) {
+                if (in_array($oldEnv, $config['environments']) && !in_array($newEnv, $config['environments'])) {
+                    // Replace environment name
+                    $config['environments'] = array_map(function ($env) use ($oldEnv, $newEnv) {
+                        return ($env === $oldEnv) ? $newEnv : $env;
+                    }, $config['environments']);
+
+                    foreach ($config['tests'] as &$test) {
+                        if (!array_key_exists($oldEnv, $test['environments']) || array_key_exists($newEnv, $test['environments'])) {
+                            continue;
+                        }
+
+                        $newPipelines = [];
+                        foreach ($test['environments'][$oldEnv]['pipelines'] as $pipeline) {
+                            if (!array_key_exists($pipeline['name'], $pipelinesMapping)) {
+                                echo "Unable to find match for pipeline {$pipeline['name']} in exercise $id!\n";
+                                return $config;
+                            }
+                            $pipeline['name'] = $pipelinesMapping[$pipeline['name']];
+                            $newPipelines[] = $pipeline;
+                        }
+                        $test['environments'][$newEnv] = $test['environments'][$oldEnv];
+                        $test['environments'][$newEnv]['pipelines'] = $newPipelines;
+                        unset($test['environments'][$oldEnv]);
+                    }
+                }
+                return $config;
+            }, true);
+            echo "\n";
+
+            $this->db->commit();
+            echo "COMIT!\n";
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
     }
 }

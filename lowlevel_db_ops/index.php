@@ -4,12 +4,14 @@ require_once('vendor/autoload.php');
 
 
 function recodex_lowlevel_db_ops_main($argv) {
+    $scriptDir = dirname(array_shift($argv));    // skip script name
+    chdir($scriptDir);
+
     foreach (glob('commands/*.php') as $file) {
         require_once($file);
     }
 
 
-    array_shift($argv);    // skip script name
 
     if (empty($argv[0])) {
         echo "No command provided.\n";

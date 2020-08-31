@@ -23,7 +23,7 @@ class Runtimes extends BaseCommand
             }
 
             if ($printProgress) {
-                echo ".";
+                echo $newYaml !== $yaml ? 'x' : '.';
             }
         }
     }

@@ -132,4 +132,35 @@ class Exercises extends BaseCommand
             echo "Total $okCount OK.\n\n";
         }
     }
+
+
+    public function migrateAttachmentFiles($newStorageRoot)
+    {
+        if (!is_dir($newStorageRoot)) {
+            throw new Exception("Path $newStorageRoot is not an existing directory.");
+        }
+
+        $counter = 0;
+        $notFound = 0;
+
+        $files = $this->db->query("SELECT * FROM uploaded_file WHERE discriminator = 'attachmentfile'");
+        foreach ($files as $file) {
+            ++$counter;
+            echo $file->id, " ";
+
+            if (!$file->local_file_path || !file_exists($file->local_file_path)) {
+                ++$notFound;
+                echo "FILE NOT FOUND!\n";
+                continue;
+            }
+
+            $dst = "$newStorageRoot/attachments/user_$file->user_id/{$file->id}_$file->name";
+            echo "copied to $dst ... ";
+            mkdir(dirname($dst), 0775, true);
+            $res = is_dir(dirname($dst)) && copy($file->local_file_path, $dst);
+            echo $res ? "OK\n" : "FAILED\n";
+        }
+
+        echo "Total $counter records processed, $notFound files were not found.\n";
+    }
 }

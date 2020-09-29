@@ -84,7 +84,7 @@ class Solutions extends BaseCommand
                 $dst = "$newStorageRoot/results/$submission->subdir/{$submission->id}_$type.zip";
                 echo "copied to $dst ... ";
                 @mkdir(dirname($dst), 0775, true);
-                $res = is_dir(dirname($dst)) && copy($submission->job_config_path, $dst);
+                $res = is_dir(dirname($dst)) && copy($src, $dst);
                 echo $res ? "OK\n" : "FAILED\n";
             }
         }
@@ -114,7 +114,7 @@ class Solutions extends BaseCommand
 
             ++$rows;
             echo "$rows: $id  ($zipPath)\n";
-            $files = $this->db->query("SELECT * FROM uploaded_file WHERE solution_id = ? AND discriminator == 'solutionfile'", $id);
+            $files = $this->db->query("SELECT * FROM uploaded_file WHERE solution_id = ? AND discriminator = 'solutionfile'", $id);
             if (!$files) {
                 touch($zipPath);
                 continue;

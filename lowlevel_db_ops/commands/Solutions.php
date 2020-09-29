@@ -39,13 +39,13 @@ class Solutions extends BaseCommand
                 echo $submission->id, " ";
                 if (!file_exists($submission->job_config_path)) {
                     ++$notFound;
-                    echo "FILE NOT FOUND!\n";
+                    echo "FILE $submission->job_config_path NOT FOUND!\n";
                     continue;
                 }
 
                 $dst = "$newStorageRoot/job_configs/$submission->subdir/{$submission->id}_$type.yml";
                 echo "copied to $dst ... ";
-                mkdir(dirname($dst), 0775, true);
+                @mkdir(dirname($dst), 0775, true);
                 $res = is_dir(dirname($dst)) && copy($submission->job_config_path, $dst);
                 echo $res ? "OK\n" : "FAILED\n";
             }
@@ -83,7 +83,7 @@ class Solutions extends BaseCommand
 
                 $dst = "$newStorageRoot/results/$submission->subdir/{$submission->id}_$type.zip";
                 echo "copied to $dst ... ";
-                mkdir(dirname($dst), 0775, true);
+                @mkdir(dirname($dst), 0775, true);
                 $res = is_dir(dirname($dst)) && copy($submission->job_config_path, $dst);
                 echo $res ? "OK\n" : "FAILED\n";
             }
@@ -105,7 +105,7 @@ class Solutions extends BaseCommand
         $solutions = $this->db->fetchPairs("SELECT id, subdir FROM solution");
         foreach ($solutions as $id => $subdir) {
             $zipPath = "$newStorageRoot/solutions/$subdir/${id}.zip";
-            mkdir(dirname($zipPath), 0775, true);
+            @mkdir(dirname($zipPath), 0775, true);
             if (!is_dir(dirname($zipPath))) {
                 echo "ERROR: Cannot make directory for $zipPath!\n";
                 continue;

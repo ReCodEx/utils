@@ -150,13 +150,13 @@ class Exercises extends BaseCommand
 
             if (!$file->local_file_path || !file_exists($file->local_file_path)) {
                 ++$notFound;
-                echo "FILE NOT FOUND!\n";
+                echo "FILE $file->local_file_path NOT FOUND!\n";
                 continue;
             }
 
             $dst = "$newStorageRoot/attachments/user_$file->user_id/{$file->id}_$file->name";
             echo "copied to $dst ... ";
-            mkdir(dirname($dst), 0775, true);
+            @mkdir(dirname($dst), 0775, true);
             $res = is_dir(dirname($dst)) && copy($file->local_file_path, $dst);
             echo $res ? "OK\n" : "FAILED\n";
         }

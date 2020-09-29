@@ -115,7 +115,19 @@ class Solutions extends BaseCommand
             ++$rows;
             echo "$rows: $id  ($zipPath)\n";
             $files = $this->db->query("SELECT * FROM uploaded_file WHERE solution_id = ? AND discriminator = 'solutionfile'", $id);
-            if (!$files) {
+
+            $existingFiles = [];
+            foreach ($files as $file) {
+                ++$counter;
+                if (!file_exists($file->local_file_path)) {
+                    ++$notFound;
+                    echo "\t$file->name FILE $file->local_file_path NOT FOUND!\n";
+                } else {
+                    $existingFiles[] = $file;
+                }
+            }
+
+            if (!$existingFiles) {
                 touch($zipPath);
                 continue;
             }
@@ -126,19 +138,11 @@ class Solutions extends BaseCommand
                 throw new Exception("Cannot open ZIP ($res) $zipPath");
             }
 
-            foreach ($files as $file) {
+            foreach ($existingFiles as $file) {
                 echo "\t$file->name ";
-                ++$counter;
-                if (!file_exists($file->local_file_path)) {
-                    ++$notFound;
-                    echo "FILE $file->local_file_path NOT FOUND!\n";
-                    continue;
-                }
-
                 if (!$zip->addFile($file->local_file_path, $file->name)) {
                     throw new Exception("Unable to add file $file->name to $zipPath");
                 }
-
                 echo "OK\n";
             }
 

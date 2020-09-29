@@ -36,7 +36,7 @@ class Solutions extends BaseCommand
             $submissions = $this->db->query("SELECT * FROM $table");
             foreach ($submissions as $submission) {
                 ++$counter;
-                echo $submission->id, " ";
+                echo "$counter: $submission->id ";
                 if (!file_exists($submission->job_config_path)) {
                     ++$notFound;
                     echo "FILE $submission->job_config_path NOT FOUND!\n";
@@ -72,7 +72,7 @@ class Solutions extends BaseCommand
             $submissions = $this->db->query("SELECT * FROM $table");
             foreach ($submissions as $submission) {
                 ++$counter;
-                echo $submission->id, " ";
+                echo "$counter: $submission->id ";
                 $src = preg_replace('#^https?://[^/]+#', $oldServerRoot, $submission->results_url);
 
                 if (!file_exists($src)) {
@@ -99,6 +99,7 @@ class Solutions extends BaseCommand
             throw new Exception("Path $newStorageRoot is not an existing directory.");
         }
 
+        $rows = 0;
         $counter = 0;
         $notFound = 0;
 
@@ -111,7 +112,8 @@ class Solutions extends BaseCommand
                 continue;
             }
 
-            echo "$id  ($zipPath)\n";
+            ++$rows;
+            echo "$rows: $id  ($zipPath)\n";
             $files = $this->db->query("SELECT * FROM uploaded_file WHERE solution_id = ? AND discriminator == 'solutionfile'", $id);
             if (!$files) {
                 touch($zipPath);

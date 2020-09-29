@@ -146,7 +146,7 @@ class Exercises extends BaseCommand
         $files = $this->db->query("SELECT * FROM uploaded_file WHERE discriminator = 'attachmentfile'");
         foreach ($files as $file) {
             ++$counter;
-            echo $file->id, " ";
+            echo "$counter: $file->id ";
 
             if (!$file->local_file_path || !file_exists($file->local_file_path)) {
                 ++$notFound;

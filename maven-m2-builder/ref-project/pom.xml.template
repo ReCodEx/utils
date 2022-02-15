@@ -13,7 +13,7 @@
         <maven.compiler.target>{{JAVA_VERSION}}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <javafx.version>{{JAVA_VERSION}}</javafx.version>
+        <javafx.version>17.0.1</javafx.version>
     </properties>
 
     <dependencies>

@@ -29,7 +29,3 @@ if [[ $RES != 0 ]]; then
 	echo "Compilatio or execution failed!"
 	exit $RES
 fi
-
-echo "Copying .m2 directory to $M2_HOME/.m2 (elevated privileges reqired)"
-
-sudo sh -c "mkdir -p $M2_HOME; rm -rf $M2_HOME/.m2; mv ./.m2 $M2_HOME; chown -R root:root $M2_HOME"

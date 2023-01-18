@@ -9,9 +9,6 @@ import recodex_api
 from metadata import MetadataHandler
 
 
-# Low level functions for calling ReCodEx CLI process
-
-
 def find_file(file, fallback_wildcard):
     '''
     Return file (name) if it exists or evaluate fallback wildcard and return its name (if it results in only one record).
@@ -59,7 +56,8 @@ def get_groups(config_groups):
     '''
     groups = []
     for root in config_groups:
-        groups = groups + recodex_api.get_relevant_groups(root.get('id', None), root.get('recursive', False))
+        groups = groups + recodex_api.get_relevant_groups(root.get('id', None),
+                                                          root.get('recursive', False), root.get('archived', False))
     return groups
 
 
@@ -67,21 +65,22 @@ if __name__ == "__main__":
     # Process program arguments...
     parser = argparse.ArgumentParser()
     parser.add_argument("exercise", type=str, help="Identifier of the exercise.")
-    parser.add_argument("--dest_dir", type=str,
+    parser.add_argument("--dest-dir", type=str,
                         help="Destination directory where the solutions are downloaded.")
     parser.add_argument("--config", type=str,
                         help="Path to yaml file with simulation configuration (./config.yaml is default).")
     parser.add_argument("--manifest", type=str,
-                        help="Path to csv file where the manifest will be saved (list of all downloaded solutions).")
-#    TODO
-#    parser.add_argument("--users", type=str,
-#                        help="Comma separated list of logins (only solutions of these users will be downloaded).")
-#    parser.add_argument("--late", default=False, action="store_true",
-#                        help="Mark downloaded solutions as late.")
+                        help="Path to csv file where the manifest will be saved (list of all downloaded solutions/files).")
+    parser.add_argument("--manifest-per-file", default=False, action="store_true",
+                        help="If present, the manifest file will hold one row per each downloaded file (not per solution).")
     args = parser.parse_args()
 
+    if args.manifest_per_file and not args.manifest and not args.dest_dir:
+        raise "The --manifest-per-file is only valid when both manifest is written and dest-dir for downloads is speified."
+
     # Load configuration
-    config = load_config(find_file(args.config, './config.yaml'))
+    config_file = find_file(args.config, './config.yaml')
+    config = load_config(config_file)
     if args.exercise not in config.get('exercises', {}):
         print("Invalid exercise identifier '{}'. Config holds exercises '{}'.".format(
             args.exercise, "', '".join(config['exercises'].keys())))
@@ -93,11 +92,11 @@ if __name__ == "__main__":
             raise RuntimeError("Unable to create destination directory '{}'.".format(args.dest_dir))
 
     # Prepare metadata handler which generates paths and saves manifest
-    metadata = MetadataHandler(args.dest_dir, config)
+    metadata = MetadataHandler(args.dest_dir, config, os.path.dirname(config_file))
     if args.manifest:
-        metadata.open_mainfest(args.manifest)
+        metadata.open_mainfest(args.manifest, args.manifest_per_file)
 
-    # Find assignment for selected exercise
+    # Find assignments for selected exercise
     exercise_id = config['exercises'][args.exercise]
 
     # Iterate over all relevant groups, all their assignments, and all their solutions

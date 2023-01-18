@@ -1,0 +1,51 @@
+# Additional attributes added to metadata using translation via CSV files.
+# The key is something that is already in metadata (e.g., user ID), value is taken from the CSV file and added
+# to the metadata under a new name (which can be subsequently referenced in path or manifest configuration)
+translated_attributes:
+  login:  # the same key is used in metadata (i.e., now we can reference 'login' in path and manifest)
+    key: 'solution.authorId'  # exiting path in metadata used as key for translation
+    csv:  # CSV file where the translation data are stored
+      file: './students.csv'  # relative path to the file (relative to config.yaml)
+      delimiter: ';'
+      quotechar: '"'
+      header: false  # true if the first line is a header, false otherwise (header holds column names)
+      key_column: 4  # reference to a key column (either a zero-based index, or a string name if the header is present)
+      value_column: 0  # reference to a value column
+
+# a sequence of sub-directories in which the solutions are extracted (each solution path needs to be unique)
+path:
+  - 'admin.normLastName'
+  - 'author.normName'
+  - 'solution.createdAt'
+
+# columns stored into the manifest file
+manifest:
+  path: 'path'
+  solution_id: 'solution.id'
+  assignment_id: 'assignment.id'
+  group_id: 'group.id'
+  group_admin_id: 'admin.id'
+  group_admin: 'admin.fullName'
+  author_id: 'solution.authorId'
+  author: 'author.fullName'
+  submitted: 'solution.createdAt'
+  login: 'login'
+
+# filter for solutions (only those who pass the filter are downloaded)
+solutions:
+  accepted: true  # only solutions marked as accepted are loaded
+#  best: true  # only solutions marked as the best (either accepted or the last solution with the highest points)
+#  reviewed: true  # only solutions with reviews
+#  correctness: 100  # correctness must be greater or equal this threshold [%]
+
+# list of groups that should be searched for solutions
+groups:
+  - id: a19f9352-7090-488d-9af2-df1d7e2ab542
+    recursive: true  # true = scan also all subgroups recursively (default is false)
+    archived: true  # true = allow archived groups (default is false)
+
+# pre-configured exercises (translates local identifier used in args to ReCodEx exercise ID)
+exercises:
+  simple: 83ce8727-97b2-4709-b8ca-eff109306f75
+  advanced: e465ae18-4325-44be-98b2-acd86b038f83
+  bonus: 23a2d8ac-9791-4577-bc1e-73a9bd28ba9c

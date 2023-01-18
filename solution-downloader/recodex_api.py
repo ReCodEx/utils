@@ -7,8 +7,14 @@ from ruamel import yaml
 
 group_cache = None
 
+# Low level functions for calling ReCodEx CLI process
+
 
 def _recodex_call(args):
+    '''
+    Invoke recodex CLI process with given set of arguments.
+    On success, stdout is returned as string. On error, None is returned and the message is printed out.
+    '''
     res = subprocess.run(['recodex'] + args, capture_output=True)
     if res.returncode == 0:
         return res.stdout
@@ -18,12 +24,15 @@ def _recodex_call(args):
         return None
 
 
-def _get_all_groups():
+def _get_all_groups(archived=False):
     '''
     Load all groups and return them in a dictionary indexed by group IDs.
     '''
 
-    payload = _recodex_call(['groups', 'all'])
+    args = ['groups', 'all']
+    if archived:
+        args.append('--archived')
+    payload = _recodex_call(args)
     if payload is None:
         raise Exception("Error reading groups list.")
     groups = yaml.safe_load(payload)
@@ -35,14 +44,18 @@ def _get_all_groups():
     return res
 
 
-def get_relevant_groups(group_id, recursive):
+def get_relevant_groups(group_id, recursive, archived=False):
+    '''
+    Get all groups which are children/descendants (based on recursive flag) of given root group.
+    Returns only non-archived groups with assignments.
+    '''
     global group_cache
     if group_cache is None:
-        group_cache = _get_all_groups()
+        group_cache = _get_all_groups(archived)
 
     res = []
     group = group_cache.get(group_id, None)
-    if group is None or group.get('archived'):
+    if group is None or (archived is False and group.get('archived')):
         return res
 
     if len(group.get('privateData', {}).get('assignments', [])) != 0:
@@ -50,7 +63,7 @@ def get_relevant_groups(group_id, recursive):
 
     if recursive:
         for child in group.get('childGroups', []):
-            res = res + get_relevant_groups(child, recursive)
+            res = res + get_relevant_groups(child, recursive, archived)
 
     return res
 
@@ -95,6 +108,13 @@ def get_assignments(group_id, exercise_id):
 
 
 def _filter_solution(solution, config):
+    '''
+    Filter list of solutions based on given config. The config is dictionary loaded from config['solutions'].
+    Supported parameters and their values are in the readme.
+    '''
+    if solution is None:
+        return False
+
     accepted = config.get('accepted', None)
     if accepted is not None and solution.get('accepted', False) != accepted:
         return False
@@ -104,11 +124,13 @@ def _filter_solution(solution, config):
         return False
 
     reviewed = config.get('reviewed', None)
-    if reviewed is not None and solution.get('reviewed', False) != reviewed:
+    if reviewed is not None and bool(solution.get('review', {}).get('closedAt', None)) != reviewed:
         return False
 
     correctness = config.get('correctness', None)
-    score = solution.get('lastSubmission', {}).get('evaluation', {}).get('score', 0.0) * 100.0
+    lastSubmission = solution.get('lastSubmission') or {}
+    evaluation = lastSubmission.get('evaluation') or {}
+    score = evaluation.get('score', 0.0) * 100.0
     if correctness is not None and correctness > score:
         return False
 
@@ -118,7 +140,6 @@ def _filter_solution(solution, config):
 def get_solutions(assignment_id, config):
     '''
     Load all solutions of given assignment and filter only accepted ones.
-    Returns a dictionary user ID => solution ID.
     '''
     payload = _recodex_call(['assignments', 'get-solutions', assignment_id, '--yaml'])
     if payload is None:
@@ -133,12 +154,12 @@ def get_solutions(assignment_id, config):
     return result
 
 
-def download_solutions(solution_id, dir, dest_dir):
+def download_solutions(solution_id, dir, zip_dir):
     '''
-    Download a solution and extract it into target dir.
+    Download a solution (into `zip_dir`) and extract it into target `dir`.
     The downloaded zip is deleted after extraction.
     '''
-    zip_file = "{}/{}.zip".format(dest_dir, solution_id)
+    zip_file = "{}/{}.zip".format(zip_dir, solution_id)
     _recodex_call(['solutions', 'download', solution_id, zip_file])
     if not os.path.exists(zip_file):
         raise RuntimeError("Download of {} failed!".format(zip_file))

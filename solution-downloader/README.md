@@ -62,12 +62,14 @@ The list of groups holds objects with group identification:
 
 ### Solutions filter
 
-The filter has the following options. If the bool flag is present, the solution needs to match its value (in given attribute). If a bool flag is missing, the corresponding property is not checked in the filter.
+The filter has the following options. If the bool flag is present, the solution needs to match its value (in the given attribute). If a bool flag is missing, the corresponding property is not checked in the filter.
 
 - `accepted` -- a flag indicating whether the solution has been marked as accepted by the teacher
 - `best` -- a flag indicating whether this is the best solution submitted by a user for a particular assignment (the best solution is either the accepted solution or the latest solution with the highest amount of points granted if no solution was accepted)
 - `reviewed` -- a flag indicating whether a closed review exists for a solution
 - `correctness` -- an integer with a correctness threshold in percent (only solutions with correctness greater or equal are downloaded)
+- `createdAt` -- unix timestamp, only solutions created at the given time or later are downloaded
+- `maxAge` -- similar filter like `createdAt`, but specifies relative time in seconds
 
 ### Download path
 
@@ -88,9 +90,9 @@ In which the submission from `January 05th, 2023, 16:26:47 (GMT)` of the student
 
 An ordered dictionary describing how the output manifest CSV file will be formatted. Each item of the dictionary corresponds to one column, the key holds the column name and the values are references to the metadata of the solutions.
 
-### Referening solution metadata
+### Referencing solution metadata
 
-In some configurations (e.g., path or manifest), a user can reference data attributes related to the solution. An attribute reference is a string of keys separated by dots which navigate the *metadata structure* created for each processed solution. The metadata holds the following top-level keys:
+In some configurations (e.g., path or manifest), a user can reference data attributes related to the solution. An attribute reference is a string of keys separated by dots that navigate the _metadata_ structure* created for each processed solution. The metadata holds the following top-level keys:
 
 - `group` -- [entity representing the group](https://github.com/ReCodEx/api/blob/master/app/model/view/GroupViewFactory.php) in which the exercise assignment was placed (and where the solution is submitted)
 - `assignment` -- [entity representing the assignment](https://github.com/ReCodEx/api/blob/master/app/model/view/AssignmentViewFactory.php) (i.e., an instance of an exercise)
@@ -99,9 +101,14 @@ In some configurations (e.g., path or manifest), a user can reference data attri
 - `admin` -- [entity of the first primary admin](https://github.com/ReCodEx/api/blob/master/app/model/view/UserViewFactory.php) of the group
 - `path` -- string representing the relative download path where the solution files are stored
 
+If the `--manifest-per-file` option is set, the manifest specification can also use
+- `file` -- [entity of the solution file]()
+- `zipEntry` -- a corresponding entity from `zipEntries` if the file is a whole-solution ZIP file
+- `fileName` -- file name, possibly concatenated with the zip entry (if the file is a whole-solution ZIP file)
+
 In addition, each [user entity](https://github.com/ReCodEx/api/blob/master/app/model/view/UserViewFactory.php) is augmented to contain the following:
 - `fullName` -- concatenated given and last name
 - `normFirstName` -- normalized given name (special characters are mapped to the nearest ASCII characters, so normalized name can be used in a path for instance)
 - `normLastName` -- normalized last name
-- `normName` -- normalized last name an given name
+- `normName` -- normalized last name and given name
 

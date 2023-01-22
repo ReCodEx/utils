@@ -1,6 +1,5 @@
 import unicodedata
 import csv
-import glob
 import os
 import recodex_api
 from translator import AttributeTranslator
@@ -189,13 +188,24 @@ class MetadataHandler:
                 os.chdir(self.get_path())
                 path = self.metadata['path']  # save solution path
 
-                for file in glob.glob('**/*', recursive=True):
-                    self.metadata['path'] = path + '/' + file
+                for file in recodex_api.get_solution_files(self.metadata['solution']['id']):
                     self.metadata['file'] = file
-                    self._write_manifest_row()
+                    if 'zipEntries' in file:
+                        for entry in file['zipEntries']:
+                            self.metadata['path'] = path + '/' + entry['name']
+                            self.metadata['fileName'] = file['name'] + '#' + entry['name']
+                            self.metadata['zipEntry'] = entry
+                            self._write_manifest_row()
+
+                    else:
+                        self.metadata['path'] = path + '/' + file['name']
+                        self.metadata['fileName'] = file['name']
+                        self._write_manifest_row()
 
                 self.metadata['path'] = path  # restore the path
                 self.metadata.pop('file', None)
+                self.metadata.pop('fileName', None)
+                self.metadata.pop('zipEntry', None)
                 os.chdir(pwd)
             else:
                 self._write_manifest_row()

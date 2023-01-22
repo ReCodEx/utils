@@ -106,14 +106,14 @@ if __name__ == "__main__":
     for group in groups:
         metadata.set_group(group)
         group_counter += 1
-        print("Loading assignments in group {} ({} of {})...".format(group['id'], group_counter, len(groups)))
+        print("Loading assignments in group {} ({} of {}) ...".format(group['id'], group_counter, len(groups)))
 
         assignments = recodex_api.get_assignments(group['id'], exercise_id)
         assignment_counter = 0
         for assignment in assignments:
             metadata.set_assignment(assignment)
             assignment_counter += 1
-            print(" - Loading list of solutions of assignment {} ({} of {})...".format(
+            print(" - Loading list of solutions of assignment {} ({} of {}) ...".format(
                 assignment['id'], assignment_counter, len(assignments)))
 
             solutions = recodex_api.get_solutions(assignment['id'], config.get('solutions', {}))
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
                 if args.dest_dir:  # Handle download
                     path = metadata.get_path()  # of current solution
-                    recodex_api.download_solutions(solution['id'], path, args.dest_dir)
+                    recodex_api.download_solution(solution['id'], path, args.dest_dir)
                 metadata.write_manifest()  # of current solution
 
     metadata.close_manifest()

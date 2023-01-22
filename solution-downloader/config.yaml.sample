@@ -37,6 +37,8 @@ solutions:
 #  best: true  # only solutions marked as the best (either accepted or the last solution with the highest points)
 #  reviewed: true  # only solutions with reviews
 #  correctness: 100  # correctness must be greater or equal this threshold [%]
+#  maxAge: 86400  # maximal age (based on current time) of the solution
+#  createdAt: 1674382629  # unix timestamp, only solutions with createdAt equal or greater are downloaded
 
 # list of groups that should be searched for solutions
 groups:

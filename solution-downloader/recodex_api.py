@@ -3,6 +3,7 @@ import subprocess
 import os
 import zipfile
 import shutil
+import time
 from ruamel import yaml
 
 group_cache = None
@@ -134,6 +135,15 @@ def _filter_solution(solution, config):
     if correctness is not None and correctness > score:
         return False
 
+    createdAt = int(solution.get('createdAt', 0))
+    createdAtLimit = config.get('createdAt', None)
+    if createdAtLimit is not None and createdAtLimit > createdAt:
+        return False
+
+    maxAge = config.get('maxAge', None)
+    if maxAge is not None and createdAt < int(time.time()) - maxAge:
+        return False
+
     return True
 
 
@@ -154,7 +164,7 @@ def get_solutions(assignment_id, config):
     return result
 
 
-def download_solutions(solution_id, dir, zip_dir):
+def download_solution(solution_id, dir, zip_dir):
     '''
     Download a solution (into `zip_dir`) and extract it into target `dir`.
     The downloaded zip is deleted after extraction.
@@ -171,3 +181,11 @@ def download_solutions(solution_id, dir, zip_dir):
         zip_ref.extractall(dir)
 
     os.unlink(zip_file)
+
+
+def get_solution_files(solution_id):
+    '''
+    Retrieve a list of submitted files for given solution.
+    '''
+    payload = _recodex_call(['solutions', 'get-files', solution_id, '--yaml'])
+    return yaml.safe_load(payload)

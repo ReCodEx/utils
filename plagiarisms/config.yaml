@@ -1,0 +1,66 @@
+exercises:  # used for both the manager and the downloader
+  '01': c8cb7a3a-7576-11eb-a1a9-005056ad4f31
+  '02': 072da0cd-6ad9-11eb-a1a9-005056ad4f31
+  '03': 9751d2f7-8e3f-11eb-a1a9-005056ad4f31
+  '04': c57f6e29-95f0-11eb-a1a9-005056ad4f31
+  '05': 9a9b8b15-99e6-11eb-a1a9-005056ad4f31
+  '06': eb50e3aa-abf6-11eb-a1a9-005056ad4f31
+  'game': 0e3e011d-a340-4524-a10a-1c9052bb2c65
+
+groups:  # passed down to the downloader
+  #- id: 03981a9f-8a9a-11ec-986f-f39926f24a9c
+  - id: 086104cd-8e3e-11ec-986f-f39926f24a9c
+    recursive: true
+    #archived: true
+
+manifest:  # passed down to the downloader
+  # solution_id: 'solution.id'  is always added automatically
+  path: 'path'
+  file_id: 'file.id'
+  author_id: 'solution.authorId'
+
+solutions:  # passed down to the downloader (createdAt condition is added/overwritten by the manager)
+  correctness: 100
+
+# Manager-only configuration
+dirs:
+  working: './wd'
+  last_batch: './last'
+  archive: './archive'
+  logs: './logs'
+
+logger:  # https://docs.python.org/3/library/logging.html#levels
+  console_level: DEBUG
+  file_level: INFO
+
+downloader:
+  python: 'python'
+  exec: '../solution-downloader/download.py'
+
+comparator:
+  name: 'comparatrix'
+  exec: 'comparatrix'
+  args:  # common for all exercises
+    - '--csv'
+    - '@current@'
+    - '--csv-base'
+    - '@archive@'
+    - '--csv-output'
+    - '@output@'
+  exercise_args:
+    '01': [ '--min-pattern-length', '50', '--min-percentage', '33', '--min-total-length', '1000' ]
+  output:
+    csv:
+      delimiter: ','
+    columns: # keys are fixed (known by the manager), values refer to column names in the header
+      author_id: 'author_id_2'
+      similarity: 'percentage_1'
+      file_id1: 'file_id_1'
+      solution_id1: 'solution_id_1'
+      offset1: 'byte_position_1'
+      length1: 'byte_size_1'
+      file_id2: 'file_id_2'
+      solution_id2: 'solution_id_2'
+      offset2: 'byte_position_2'
+      length2: 'byte_size_2'
+

@@ -1,14 +1,16 @@
 import os
 import shutil
 from datetime import datetime
-import downloader
+
+MANIFEST_FILE = 'manifest.csv'
+OUTPUT_FILE = 'output.csv'
 
 
 def mkdir(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
         if not os.path.exists(dir):
-            raise Exception("Unable to create directory {}".format(dir))
+            raise RuntimeError("Unable to create directory {}".format(dir))
 
 
 class FilesManager:
@@ -41,15 +43,27 @@ class FilesManager:
     def get_working_dir(self):
         return self.working_dir
 
+    def get_working_manifest_file(self):
+        return self.working_dir + '/' + MANIFEST_FILE
+
     def clear_working_dir(self):
         if self.working_dir_exists():
             shutil.rmtree(self.working_dir)
 
+    def get_comparator_output_file(self):
+        return self.working_dir + '/' + OUTPUT_FILE
+
     def get_last_dir(self):
         return self.last_dir
 
+    def get_last_manifest_file(self):
+        return self.last_dir + '/' + MANIFEST_FILE
+
     def get_archive_dir(self):
         return self.archive_dir
+
+    def get_archive_manifest_file(self):
+        return self.archive_dir + '/' + MANIFEST_FILE
 
     def get_log_file(self):
         '''
@@ -59,16 +73,14 @@ class FilesManager:
         mkdir(self.logs_dir)
         log_file = self.logs_dir + '/' + datetime.now().strftime("%Y-%m-%d-%H%M%S--") + self.exercise + '.log'
         if os.path.exists(log_file):
-            raise Exception("Log file {} already exists.".format(log_file))
+            raise RuntimeError("Log file {} already exists.".format(log_file))
         return log_file
 
     def update_solution_dirs(self):
         '''
-        Perform final update -- merge current batch to archive and move it replace the last batch.
+        Lay foundation of archive if it does not exist and replace last dir with working dir.
         '''
-        if os.path.exists(self.archive_dir + '/' + downloader.MANIFEST_FILE):
-            downloader.merge_new_solutions(self.working_dir, self.archive_dir)
-        else:
+        if not os.path.exists(self.get_archive_manifest_file()):
             shutil.rmtree(self.archive_dir)
             shutil.copytree(self.working_dir, self.archive_dir)
 

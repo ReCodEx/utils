@@ -9,7 +9,7 @@ exercises:  # used for both the manager and the downloader
 
 groups:  # passed down to the downloader
   #- id: 03981a9f-8a9a-11ec-986f-f39926f24a9c
-  - id: 086104cd-8e3e-11ec-986f-f39926f24a9c
+  - id: e9882530-0226-4d58-8d39-1819d54a3636
     recursive: true
     #archived: true
 
@@ -39,16 +39,15 @@ downloader:
 
 comparator:
   name: 'comparatrix'
-  exec: 'comparatrix'
+  exec: './comparatrix.exe'
   args:  # common for all exercises
-    - '--csv'
-    - '@current@'
-    - '--csv-base'
-    - '@archive@'
-    - '--csv-output'
-    - '@output@'
-  exercise_args:
-    '01': [ '--min-pattern-length', '50', '--min-percentage', '33', '--min-total-length', '1000' ]
+    manifest: [ '--csv', '{}' ]
+    archive: [ '--csv-base', '{}' ]
+    output: [ '--csv-output', '{}' ]
+    other: []
+  exercise_args: # overrides for specific exercises (each subsection is treated independently)
+    '05':
+      other: [ '--min-pattern-length', '50', '--min-percentage', '33', '--min-total-length', '1000' ]
   output:
     csv:
       delimiter: ','

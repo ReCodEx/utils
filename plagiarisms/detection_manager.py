@@ -9,7 +9,7 @@ import argparse
 import logging
 from config import load_config
 # from detected_similarity import load_similarities_from_csv, save_similarities
-import downloader
+from downloader import Downloader
 from files import FilesManager
 from comparator import Comparator
 
@@ -18,11 +18,13 @@ def str_to_logging_level(level):
     if level is None:
         return None
     if type(logging.__dict__[level]) != int:
-        raise Exception("Invalid logging level {}".format(level))
+        raise RuntimeError("Invalid logging level {}".format(level))
     return logging.__dict__[level]
 
 
 def setup_logger(logger_config, file_manager):
+    '''
+    '''
     logger = logging.getLogger()
     logger.handlers.clear()
     logger.setLevel(logging.NOTSET)
@@ -42,16 +44,6 @@ def setup_logger(logger_config, file_manager):
         file_formatter = logging.Formatter("[%(asctime)s][%(levelname)-5.5s]: %(message)s")
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
-
-
-def download_solutions(config, file_manager, exercise):
-    '''
-    '''
-    file_manager.prepare_working_dir()
-    config_file = file_manager.get_working_dir() + '/config.yaml'
-    downloader.prepare_config(config, 0, config_file)
-    downloader.run_downloader(config, config_file, file_manager.get_working_dir(), exercise)
-    return downloader.has_new_solutions(file_manager.get_working_dir(), file_manager.get_last_dir())
 
 
 def process_results(config):
@@ -87,19 +79,26 @@ if __name__ == "__main__":
 
     setup_logger(config.get('logger', {}), file_manager)
 
-    comparator = Comparator(config.get("comparator", {}), args.exercise)
+    downloader = Downloader(config, file_manager, args.exercise)
+    comparator = Comparator(config.get("comparator", {}), file_manager, args.exercise)
 
+    # Download, compare, upload ...
     try:
-        logging.getLogger().info("Starting the download process...")
-        any_new = download_solutions(config, file_manager, args.exercise)
+        file_manager.prepare_working_dir()
 
-        if any_new:
+        logging.getLogger().info("Starting the download process...")
+        downloader.run()
+
+        if downloader.has_new_solutions():
             logging.getLogger().info("Starting the external comparator...")
+            logging.getLogger().debug(' '.join(comparator.get_args()))
             comparator.run()
 
             logging.getLogger().info("Uploading results to ReCodEx...")
+            # TODO
 
             logging.getLogger().info("Updating solution archive...")
+            downloader.merge_new_solutions()
             file_manager.update_solution_dirs()
         else:
             logging.getLogger().info("No new solutions detected.")

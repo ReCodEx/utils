@@ -8,13 +8,16 @@
 import argparse
 import logging
 from config import load_config
-# from detected_similarity import load_similarities_from_csv, save_similarities
+from detected_similarity import load_similarities_from_csv, save_similarities
 from downloader import Downloader
 from files import FilesManager
 from comparator import Comparator
 
 
 def str_to_logging_level(level):
+    '''
+    Helper function that gets logging level as string and translates it into a constant from logging module.
+    '''
     if level is None:
         return None
     if type(logging.__dict__[level]) != int:
@@ -24,6 +27,7 @@ def str_to_logging_level(level):
 
 def setup_logger(logger_config, file_manager):
     '''
+    Initialize logging based on the configuration. The logger typically writes output to console as well as to a file.
     '''
     logger = logging.getLogger()
     logger.handlers.clear()
@@ -46,12 +50,16 @@ def setup_logger(logger_config, file_manager):
         logger.addHandler(file_handler)
 
 
-def process_results(config):
-    # similarities = load_similarities_from_csv(
-    #    './output.csv', config['comparator']['output']['columns'], **config['comparator']['output'].get('csv', {}))
-    # batch_id = save_similarities(config['comparator']['name'], '', similarities)
-    # print(batch_id)
-    pass
+def process_results(comparator):
+    '''
+    Parse the comparator output, aggregate similarity records, and upload them as a batch to ReCodEx.
+    '''
+    logging.getLogger().debug("Parsing comparator output {}".format(comparator.get_output_file()))
+    similarities = load_similarities_from_csv(
+        comparator.get_output_file(), comparator.get_output_columns(), **comparator.get_output_csv_params())
+    comparator_args = " ".join(comparator.get_args())
+    batch_id = save_similarities(comparator.get_name(), comparator_args, similarities)
+    logging.getLogger().info("Similarities saved to ReCodEx as batch {}".format(batch_id))
 
 
 if __name__ == "__main__":
@@ -95,7 +103,7 @@ if __name__ == "__main__":
             comparator.run()
 
             logging.getLogger().info("Uploading results to ReCodEx...")
-            # TODO
+            process_results(comparator)
 
             logging.getLogger().info("Updating solution archive...")
             downloader.merge_new_solutions()

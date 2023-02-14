@@ -1,4 +1,5 @@
 import csv
+import logging
 import recodex_api
 
 
@@ -26,14 +27,14 @@ class DetectedSimilarity:
         for solution_id in self.files:
             for file_id in self.files[solution_id]:
                 files.append({
-                    'solution_id': solution_id,
-                    'solutionfile_id': file_id,
+                    'solutionId': solution_id,
+                    'solutionFileId': file_id,
                     'fragments': self.files[solution_id][file_id]
                 })
 
         return recodex_api.add_similarity(batch_id, self.solution_id, {
-            'solutionfile_id': self.file_id,
-            'author_id': self.author_id,
+            'solutionFileId': self.file_id,
+            'authorId': self.author_id,
             'similarity': self.similarity,
             'files': files,
         })
@@ -47,9 +48,11 @@ def load_similarities_from_csv(file_name, columns, **kwargs):
     '''
     data = {}
     result = []
+    count = 0
     with open(file_name, 'r', encoding="utf8") as f:
         reader = csv.DictReader(f, **kwargs)
         for row in reader:
+            count += 1
             file_id = row[columns['file_id1']]  # first (tested) file
             author_id = row[columns['author_id']]  # author of the second (similar) file
             data[file_id] = data.get(file_id, {})
@@ -67,6 +70,8 @@ def load_similarities_from_csv(file_name, columns, **kwargs):
                 int(row[columns['offset2']]),
                 int(row[columns['length2']])
             )
+
+    logging.getLogger().debug("Comparator yielded {} matches, aggregated in {} similarity records".format(count, len(result)))
     return result
 
 

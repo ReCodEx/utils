@@ -51,7 +51,7 @@ comparator:
   output:
     csv:
       delimiter: ','
-    columns: # keys are fixed (known by the manager), values refer to column names in the header
+    columns: # keys are fixed (known by the manager), values refer to column names in the output header
       author_id: 'author_id_2'
       similarity: 'percentage_1'
       file_id1: 'file_id_1'

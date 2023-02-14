@@ -34,7 +34,7 @@ class Comparator:
         '''
         references = {
             'manifest': self.files.get_working_manifest_file(),
-            'output': self.files.get_comparator_output_file(),
+            'output': self.get_output_file(),
         }
         if os.path.exists(self.files.get_archive_manifest_file()):
             references['archive'] = self.files.get_archive_manifest_file()
@@ -44,6 +44,15 @@ class Comparator:
             args += [arg.format(references[name]) for arg in self.args.get(name, [])]
 
         return args
+
+    def get_output_file(self):
+        return self.files.get_comparator_output_file()
+
+    def get_output_csv_params(self):
+        return self.output_csv
+
+    def get_output_columns(self):
+        return self.output_columns
 
     def run(self, **kwargs):
         '''

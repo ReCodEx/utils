@@ -59,7 +59,9 @@ def get_relevant_groups(group_id, recursive, archived=False):
     if group is None or (archived is False and group.get('archived')):
         return res
 
-    if len(group.get('privateData', {}).get('assignments', [])) != 0:
+    privateData = group.get('privateData') or {}
+    assignments = privateData.get('assignments') or []
+    if len(assignments) != 0:
         res.append(group)
 
     if recursive:

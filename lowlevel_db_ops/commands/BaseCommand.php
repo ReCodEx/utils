@@ -29,7 +29,28 @@ class BaseCommand
         );
     }
 
-    
+    protected function getGroups($archived = false)
+    {
+        $archivedClause = $archived ? '' : 'AND g.archived_at IS NULL';
+        return $this->db->query("SELECT g.*,
+            (SELECT name FROM localized_group AS lg WHERE lg.group_id = g.id AND locale = 'en' LIMIT 1) AS name_en,
+            (SELECT description FROM localized_group AS lg WHERE lg.group_id = g.id AND locale = 'en' LIMIT 1) AS description_en,
+            (SELECT name FROM localized_group AS lg WHERE lg.group_id = g.id AND locale = 'cs' LIMIT 1) AS name_cs,
+            (SELECT description FROM localized_group AS lg WHERE lg.group_id = g.id AND locale = 'cs' LIMIT 1) AS description_cs
+            FROM [group] AS g WHERE g.deleted_at IS NULL $archivedClause")
+            ->fetchAssoc('id');
+    }
+
+    protected function getAssignmentSolversGroupStats($groups)
+    {
+        $ids = array_map(function ($g) { return $g->id; }, $groups);
+        return $this->db->fetch("SELECT COUNT(DISTINCT asol.solver_id) AS solvers, SUM(asol.last_attempt_index) AS solutions, SUM(asol.evaluations_count) AS evaluations,
+            (SELECT COUNT(DISTINCT gm.user_id) FROM group_membership AS gm WHERE gm.group_id IN (?) AND gm.type = 'student') AS students,
+            (SELECT COUNT(DISTINCT gm.user_id) FROM group_membership AS gm WHERE gm.group_id IN (?) AND gm.type = 'admin') AS admins
+            FROM [group] AS g LEFT JOIN assignment AS ass ON ass.group_id = g.id JOIN assignment_solver AS asol ON asol.assignment_id = ass.id
+            WHERE g.id IN (?)", $ids, $ids, $ids);
+    }
+
     protected function getGroupName($groupId, $locale = 'en')
     {
         return getLocaleSafe(
@@ -129,6 +150,16 @@ class BaseCommand
     protected function getRuntimeConfigs()
     {
         return $this->db->fetchPairs('SELECT id, default_variables FROM runtime_environment');
+    }
+
+    protected function getAssignmentSolutionsEvaluations($id)
+    {
+        return $this->db->query("SELECT sol.*, se.*
+            FROM assignment_solution AS asol
+            JOIN solution AS sol ON asol.solution_id = sol.id
+            JOIN assignment_solution_submission AS asub ON asol.last_submission_id = asub.id
+            JOIN solution_evaluation AS se ON asub.evaluation_id = se.id
+            WHERE asol.assignment_id = ?", $id);
     }
 
     protected function getAllSolutionsOfEnvironment($env)

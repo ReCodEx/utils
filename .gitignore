@@ -12,3 +12,11 @@ installation/virtual_*
 /regression_tests/.vscode
 /lowlevel_db_ops/config/config.ini.php
 /lowlevel_db_ops/vendor
+/solution-downloader/.vscode
+/solution-downloader/__pycache__
+/solution-downloader/config.yaml
+/plagiarisms/.vscode
+/plagiarisms/config.yaml
+/plagiarisms/archive
+/plagiarisms/last
+/plagiarisms/logs

@@ -1,0 +1,57 @@
+exercises:  # local name -> ReCodEx ID (used for both the manager and the downloader)
+  basic: 7f855c82-50e9-496a-99db-32a59b0550ab
+  advanced: 9ffaa226-63f1-4036-b50e-a1a55bf777e1
+
+groups:  # groups to scan for solutions (passed down to the downloader)
+  - id: 9a1e1874-6bca-43f2-a5db-d5e7d238259e
+    recursive: true  # if the subgroups should be searched as well
+    # archived: true  # whether archived groups will be searched as well
+
+manifest:  # passed down to the downloader
+  # solution_id: 'solution.id'  is always added automatically
+  path: 'path'
+  file_id: 'file.id'
+  author_id: 'solution.authorId'
+
+solutions:  # passed down to the downloader (createdAt condition is added/overwritten by the manager)
+  correctness: 100
+
+dirs:  # where the stuff is loaded
+  working: './wd'  # current batch being downloaded and processed
+  last_batch: './last'  # copy of the last processed batch
+  archive: './archive'  # all merged solutions we have seen so far (ref. code base for comparator)
+  logs: './logs'
+
+logger:  # https://docs.python.org/3/library/logging.html#levels
+  console_level: DEBUG
+  file_level: INFO
+
+downloader:  # how to invoke the solution-downloader script
+  python: 'python'
+  exec: '../solution-downloader/download.py'
+
+comparator:  # how to invoke and process results of the source code comparator
+  name: 'comparatrix'
+  exec: './comparatrix'  # path to executable file
+  args:  # common for all exercises (use {} in strings to inject the corresponding paths)
+    manifest: [ '--csv', '{}' ]  # args referencing current manifest file
+    archive: [ '--csv-base', '{}' ]  # args reference the code base (archive) 
+    output: [ '--csv-output', '{}' ]  # args specifying where the output file should be
+    other: []  # additional args common for all exercises (unless overridden, no {} inside)
+  exercise_args: # overrides for specific exercises (each subsection is treated independently)
+    advanced:
+      other: [ '--min-pattern-length', '50', '--min-percentage', '33', '--min-total-length', '1000' ]
+  output:
+    csv:  # additional args for CSV parser
+      delimiter: ','
+    columns: # keys are fixed (known by the manager), values refer to column names in the output header
+      author_id: 'author_id_2'
+      similarity: 'percentage_1'
+      file_id1: 'file_id_1'
+      solution_id1: 'solution_id_1'
+      offset1: 'byte_position_1'
+      length1: 'byte_size_1'
+      file_id2: 'file_id_2'
+      solution_id2: 'solution_id_2'
+      offset2: 'byte_position_2'
+      length2: 'byte_size_2'

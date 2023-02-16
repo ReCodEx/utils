@@ -38,8 +38,8 @@ def load_config(cfg_file):
     # fix relative paths
     base = os.path.dirname(cfg_file)
     for dir in config['dirs']:
-        config['dirs'][dir] = _fix_config_path(config['dirs'][dir], base)
-    config['downloader']['exec'] = _fix_config_path(config['downloader']['exec'], base)
-    config['comparator']['exec'] = _fix_config_path(config['comparator']['exec'], base)
+        config['dirs'][dir] = config['dirs'][dir].format(base)
+    config['downloader']['exec'] = config['downloader']['exec'].format(base)
+    config['comparator']['exec'] = config['comparator']['exec'].format(base)
 
     return config

@@ -16,11 +16,11 @@ manifest:  # passed down to the downloader
 solutions:  # passed down to the downloader (createdAt condition is added/overwritten by the manager)
   correctness: 100
 
-dirs:  # where the stuff is loaded
-  working: './wd'  # current batch being downloaded and processed
-  last_batch: './last'  # copy of the last processed batch
-  archive: './archive'  # all merged solutions we have seen so far (ref. code base for comparator)
-  logs: './logs'
+dirs:  # where the stuff is loaded (use {} for base path -- a directory where the config file is)
+  working: '{}/wd'  # current batch being downloaded and processed
+  last_batch: '{}/last'  # copy of the last processed batch
+  archive: '{}/archive'  # all merged solutions we have seen so far (ref. code base for comparator)
+  logs: '{}/logs'
 
 logger:  # https://docs.python.org/3/library/logging.html#levels
   console_level: DEBUG
@@ -28,11 +28,11 @@ logger:  # https://docs.python.org/3/library/logging.html#levels
 
 downloader:  # how to invoke the solution-downloader script
   python: 'python'
-  exec: '../solution-downloader/download.py'
+  exec: '{}/../solution-downloader/download.py'  # use {} for base path
 
 comparator:  # how to invoke and process results of the source code comparator
   name: 'comparatrix'
-  exec: './comparatrix'  # path to executable file
+  exec: 'comparatrix'  # path to executable file (use {} for base path)
   args:  # common for all exercises (use {} in strings to inject the corresponding paths)
     manifest: [ '--csv', '{}' ]  # args referencing current manifest file
     archive: [ '--csv-base', '{}' ]  # args reference the code base (archive) 

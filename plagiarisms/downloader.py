@@ -45,7 +45,6 @@ class Downloader:
         self.config = config
         self.files = files
         self.exercise = exercise
-        self.created_at_threshold = 0  # TODO compute appropriate timestamp
 
     def _get_config_file(self):
         return self.files.get_working_dir() + '/' + CONFIG_FILE
@@ -58,7 +57,6 @@ class Downloader:
         '''
         new_config = {key: self.config[key] for key in ['exercises', 'groups', 'manifest', 'solutions']}
         new_config['path'] = ['solution.id']
-        new_config['solutions']['createdAt'] = self.created_at_threshold
         new_config['manifest']['solution_id'] = 'solution.id'
 
         with open(self._get_config_file(), 'w') as fp:

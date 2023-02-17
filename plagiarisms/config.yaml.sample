@@ -15,6 +15,7 @@ manifest:  # passed down to the downloader
 
 solutions:  # passed down to the downloader (createdAt condition is added/overwritten by the manager)
   correctness: 100
+  maxAge: 604800  # a week 
 
 dirs:  # where the stuff is loaded (use {} for base path -- a directory where the config file is)
   working: '{}/wd'  # current batch being downloaded and processed

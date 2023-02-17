@@ -110,6 +110,9 @@ def get_assignments(group_id, exercise_id):
     return res
 
 
+_max_age_ts = None  # cache for max age reference timestamp (to make sure it remains the same during the download)
+
+
 def _filter_solution(solution, config):
     '''
     Filter list of solutions based on given config. The config is dictionary loaded from config['solutions'].
@@ -143,8 +146,13 @@ def _filter_solution(solution, config):
         return False
 
     maxAge = config.get('maxAge', None)
-    if maxAge is not None and createdAt < int(time.time()) - maxAge:
-        return False
+    if maxAge is not None:
+        global _max_age_ts
+        if _max_age_ts is None:
+            _max_age_ts = int(time.time())
+
+        if createdAt < _max_age_ts - maxAge:
+            return False
 
     return True
 

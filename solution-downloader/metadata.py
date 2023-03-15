@@ -137,9 +137,9 @@ class MetadataHandler:
         '''
         self.metadata['solution'] = solution
         self.metadata['author'] = self._get_user(solution['authorId'])
+        self._use_metadata_translators()
         self.metadata['path'] = None  # make sure path config does not reference itself
         self.metadata['path'] = self._get_path()
-        self._use_metadata_translators()
 
     def open_mainfest(self, file, per_file=False):
         '''

@@ -39,7 +39,7 @@ class Comparator:
         if os.path.exists(self.files.get_archive_manifest_file()):
             references['archive'] = self.files.get_archive_manifest_file()
 
-        args = self.args.get('other', [])
+        args = self.args.get('other', []).copy()
         for name in references:
             args += [arg.format(references[name]) for arg in self.args.get(name, [])]
 

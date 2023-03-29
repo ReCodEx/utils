@@ -66,8 +66,16 @@ class Downloader:
         '''
         Verify the target dir contains the manifest file and corresponding solutions.
         '''
-        # TODO
-        pass
+        manifest_file = self.files.get_working_manifest_file()
+        if not os.path.exists(manifest_file):
+            raise Exception("Download failed -- manifest file {} does not exist".format(manifest_file))
+
+        wd = self.files.get_working_dir()
+        solutions = load_manifest_solutions(manifest_file)
+        for solution in solutions:
+            path = wd + '/' + solution
+            if not os.path.exists(path) or not os.path.isdir(path):
+                raise Exception("Solution {} does not have any downloaded files".format(solution))
 
     def run(self):
         '''

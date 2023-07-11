@@ -69,7 +69,60 @@ class BaseCommand
         return $this->db->query("SELECT * FROM exercise WHERE deleted_at IS NULL");
     }
     
-    
+    protected function getExercisesWithRefs()
+    {
+        $res = [];
+        $exercises = $this->db->query("SELECT e.*,
+            (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM user AS u WHERE u.id = e.author_id) AS author,
+            (SELECT GROUP_CONCAT(t.name ORDER BY 1 SEPARATOR ',') FROM exercise_tag AS t WHERE t.exercise_id = e.id) AS tags_str,
+            (SELECT GROUP_CONCAT(g.id ORDER BY 1 SEPARATOR ',') FROM exercise_group AS eg JOIN `group` g ON g.id = eg.group_id WHERE eg.exercise_id = e.id AND g.deleted_at IS NULL AND g.archived_at IS NULL) AS groups_str,
+            (SELECT GROUP_CONCAT(ele.localized_exercise_id ORDER BY 1 SEPARATOR ',') FROM exercise_localized_exercise AS ele WHERE ele.exercise_id = e.id) AS localized_exercises_str,
+            (SELECT GROUP_CONCAT(ere.runtime_environment_id ORDER BY 1 SEPARATOR ',') FROM exercise_runtime_environment AS ere WHERE ere.exercise_id = e.id) AS runtimes_str,
+            (SELECT GROUP_CONCAT(eeec.exercise_environment_config_id ORDER BY 1 SEPARATOR ',') FROM exercise_exercise_environment_config AS eeec WHERE eeec.exercise_id = e.id) AS runtime_configs_str,
+            (SELECT GROUP_CONCAT(ehg.hardware_group_id ORDER BY 1 SEPARATOR ',') FROM exercise_hardware_group AS ehg WHERE ehg.exercise_id = e.id) AS hardware_groups_str,
+            (SELECT GROUP_CONCAT(eet.exercise_test_id ORDER BY 1 SEPARATOR ',') FROM exercise_exercise_test AS eet WHERE eet.exercise_id = e.id) AS tests_str,
+            (SELECT GROUP_CONCAT(eel.exercise_limits_id ORDER BY 1 SEPARATOR ',') FROM exercise_exercise_limits AS eel WHERE eel.exercise_id = e.id) AS limits_str,
+            (SELECT GROUP_CONCAT(eaf.attachment_file_id ORDER BY 1 SEPARATOR ',') FROM exercise_attachment_file AS eaf WHERE eaf.exercise_id = e.id) AS attachment_files_str,
+            (SELECT GROUP_CONCAT(esef.supplementary_exercise_file_id ORDER BY 1 SEPARATOR ',') FROM exercise_supplementary_exercise_file AS esef WHERE esef.exercise_id = e.id) AS supplementary_files_str
+            FROM exercise AS e WHERE e.deleted_at IS NULL");
+        
+        $parseCols = [
+            'tags_str' => 'tags',
+            'groups_str' => 'groups',
+            'localized_exercises_str' => 'localized_exercises',
+            'runtimes_str' => 'runtimes',
+            'runtime_configs_str' => 'runtime_configs',
+            'hardware_groups_str' => 'hardware_groups',
+            'tests_str' => 'tests',
+            'limits_str' => 'limits',
+            'attachment_files_str' => 'attachment_files',
+            'supplementary_files_str' => 'supplementary_files',
+        ];
+
+        foreach ($exercises as $exercise) {
+            foreach ($parseCols as $col => $newCol) {
+                $str = $exercise[$col];
+                $exercise[$newCol] = $str ? explode(',', $str) : [];
+            }
+            $res[$exercise['id']] = $exercise;
+        }
+
+        return $res;
+    }
+
+    protected function getLocalizedExercises()
+    {
+        $texts = $this->db->query("SELECT le.* FROM localized_exercise AS le WHERE EXISTS
+            (SELECT * FROM exercise AS e JOIN exercise_localized_exercise AS ele ON ele.exercise_id = e.id
+            WHERE e.deleted_at IS NULL AND ele.localized_exercise_id = le.id)");
+        
+        $res = [];
+        foreach ($texts as $text) {
+            $res[$text->id] = $text;
+        }
+        return $res;
+    }
+
     protected function getAssignments()
     {
         return $this->db->query("SELECT * FROM assignment WHERE deleted_at IS NULL");
@@ -82,9 +135,10 @@ class BaseCommand
         return yaml_parse($configYaml);
     }
 
-    protected function getExercisesConfigs()
+    protected function getExercisesConfigs($onlyUsed = false)
     {
-        return $this->db->fetchPairs('SELECT id, config FROM exercise_config');
+        $where = $onlyUsed ? 'WHERE EXISTS (SELECT * FROM exercise AS e WHERE e.exercise_config_id = ec.id AND e.deleted_at IS NULL)' : '';
+        return $this->db->fetchPairs("SELECT ec.id, ec.config FROM exercise_config AS ec $where");
     }
 
     protected function getExercisesScoreConfigs()

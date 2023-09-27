@@ -4,6 +4,7 @@ require_once('vendor/autoload.php');
 
 
 function recodex_lowlevel_db_ops_main($argv) {
+    $saveDir = getcwd();
     $scriptDir = dirname(array_shift($argv));    // skip script name
     chdir($scriptDir);
 
@@ -33,6 +34,10 @@ function recodex_lowlevel_db_ops_main($argv) {
     $command = new $class($database);
     if (!method_exists($command, $method)) {
         throw new Exception("Method $method does not exists in class $class.");
+    }
+    
+    if ($saveDir) {
+        chdir($saveDir);
     }
     
     $command->$method(...$argv);

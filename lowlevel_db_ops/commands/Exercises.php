@@ -459,4 +459,72 @@ class Exercises extends BaseCommand
             fputcsv(STDOUT, $row);
         }
     }
+
+    public function getGPTCandidates()
+    {
+        $creationLimit = '2022-10-01 00:00:00';
+        $minTextLength = 150;
+        $minSolutions = 1;
+        $minSolvers = 1;
+        $cols = [ 'id', 'name', 'text_length', 'assignments_count', 'solvers_count', 'solutions_count', 'attachments_count', 'runtime' ];
+
+        $exercises = $this->db->query("SELECT e.id, le.name, le.assignment_text, LENGTH(le.assignment_text) AS text_length,
+                COUNT(ass.id) AS assignments_count, SUM(ass.solvers_count) AS solvers_count, SUM(ass.solutions_count) AS solutions_count,
+                (SELECT COUNT(*) FROM exercise_attachment_file WHERE exercise_id = e.id) AS attachments_count
+            FROM (
+                SELECT ass.*,
+                    (SELECT COUNT(*) FROM assignment_solver AS slv WHERE slv.assignment_id = ass.id) AS solvers_count,
+                    (SELECT COUNT(*) FROM solution_evaluation AS se
+                        JOIN assignment_solution_submission AS asub ON asub.evaluation_id = se.id
+                        JOIN assignment_solution AS asol ON asub.assignment_solution_id = asol.id 
+                        WHERE asol.assignment_id = ass.id AND se.score >= 1.0
+                    ) AS solutions_count
+                FROM assignment AS ass
+                WHERE ass.created_at > '$creationLimit' AND ass.deleted_at IS NULL
+            ) AS ass
+            JOIN exercise AS e ON ass.exercise_id = e.id
+            JOIN exercise_localized_exercise AS ele ON ele.exercise_id = e.id
+            JOIN localized_exercise AS le ON ele.localized_exercise_id = le.id
+            WHERE e.deleted_at IS NULL AND e.archived_at IS NULL AND le.locale = 'en' AND le.external_assignment_link IS NULL
+                AND NOT EXISTS (SELECT * FROM exercise_runtime_environment WHERE exercise_id = e.id AND runtime_environment_id IN ('data-linux', 'arduino-gcc', 'java-maven', 'rust-cargo'))
+            GROUP BY e.id, le.name, le.description
+            HAVING solutions_count >= ? AND solvers_count >= ? AND text_length > ?", $minSolutions, $minSolvers, $minTextLength);
+        
+        $counter = 0;
+        $rteStats = [];
+        
+        $fp = fopen("manifest.csv", "w");
+        fputcsv($fp, $cols);
+
+        foreach ($exercises as $e) {
+            ++$counter;
+            $runtime = $this->db->fetchSingle("SELECT sol.runtime_environment_id FROM solution AS sol
+                JOIN assignment_solution AS asol ON sol.id = asol.solution_id JOIN assignment AS ass ON ass.id = asol.assignment_id
+                WHERE ass.created_at > '2022-10-01 00:00:00' AND ass.deleted_at IS NULL AND ass.exercise_id = ?
+                GROUP BY runtime_environment_id
+                ORDER BY COUNT(*) DESC LIMIT 1", $e->id);
+            $rteStats[$runtime] = ($rteStats[$runtime] ?? 0) + 1;
+
+            $data = [];
+            foreach ($cols as $col) {
+                $data[] = $col === 'runtime' ? $runtime : $e->$col;
+            }
+            fputcsv($fp, $data);
+
+            file_put_contents("$e->id.md", $e->assignment_text);
+            
+            $attachments = $this->db->fetchAll("SELECT uf.* FROM uploaded_file AS uf JOIN exercise_attachment_file AS eaf ON eaf.attachment_file_id = uf.id
+                WHERE eaf.exercise_id = ?", $e->id);
+            if ($attachments) {
+                echo "mkdir $e->id\n";
+                foreach ($attachments as $a) {
+                    echo "wget --no-check-certificate https://recodex.mff.cuni.cz/api/v1/uploaded-files/$a->id/download -O $e->id/$a->name\n";
+                }
+            }
+        }
+
+        fclose($fp);
+        //echo "Exercises: $counter\n";
+        //var_dump($rteStats);
+    }
 }

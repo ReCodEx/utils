@@ -227,4 +227,33 @@ class BaseCommand
             FROM assignment_solution AS ass JOIN solution AS s ON s.id = ass.solution_id JOIN assignment AS a ON ass.assignment_id = a.id
             WHERE runtime_environment_id = ? ORDER BY s.created_at", $env);
     }
+
+    protected function getParentGroup($groupId)
+    {
+        return $this->db->fetchSingle("SELECT parent_group_id FROM `group` WHERE id = ?", $groupId);
+    }
+
+    protected function getTopLevelGroup($groupId)
+    {
+        static $cache = [];
+        static $root = null;
+
+        if (!$groupId) return null;
+
+        if (empty($cache[$groupId])) {
+            $parent = $this->getParentGroup($groupId);
+            if ($parent === null) {
+                $root = $groupId;
+                return null;
+            }
+
+            $tlg = $this->getTopLevelGroup($parent);
+            if ($tlg === null) {
+                $cache[$groupId] = $groupId;
+            } else {
+                $cache[$groupId] = $tlg;
+            }
+        }
+        return $cache[$groupId];
+    }
 }

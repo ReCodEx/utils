@@ -743,7 +743,6 @@ class Exercises extends BaseCommand
                 }
             }
             $zip->close();
-            echo "$zipFile ", join(',', $extensions), "\n";
         }
 
         foreach ($res as $eid => $exercise) {

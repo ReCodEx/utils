@@ -732,7 +732,12 @@ class Exercises extends BaseCommand
             $pattern = '/[.](' . join('|', $extensions) . ')$/';
             for ($i = 0; $i < $count; ++$i) {
                 $name = $zip->getNameIndex($i);
-                if (!preg_match($pattern, $name)) continue;
+                $regres = preg_match($pattern, $name);
+                if ($regress === false) {
+                    echo "$pattern !~ $name\n";
+                }
+                if (!$regres) continue;
+                
                 $content = $zip->getFromIndex($i);
                 $locs = $this->getLocs($content ? $content : '');
                 if ($content) {

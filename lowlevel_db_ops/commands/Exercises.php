@@ -774,7 +774,8 @@ class Exercises extends BaseCommand
             foreach ($exercise as $rte => $stats) {
                 if ($stats[0] > 0) {
                     $mean = (float)$stats[1] / (float)$stats[0];
-                    $stdev = sqrt((float)$stats[2] - ($mean * $mean));
+                    $mean2 = (float)$stats[2] / (float)$stats[0];
+                    $stdev = sqrt($mean2 - ($mean * $mean));
                     echo "$eid,$rte,$stats[0],$mean,$stdev\n";
                 }
             }

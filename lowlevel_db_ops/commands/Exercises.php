@@ -723,7 +723,7 @@ class Exercises extends BaseCommand
                 JOIN solution_evaluation AS se ON se.id = rsub.evaluation_id
                 JOIN exercise AS e ON e.id = rsol.exercise_id
                 JOIN runtime_environment AS rt ON sol.runtime_environment_id = rt.id
-                WHERE e.deleted_at IS NULL AND sol.created_at > '$from' AND sol.created_at < '$to' AND se.score >= 1.0");
+                WHERE e.deleted_at IS NULL AND sol.created_at > '$from' AND sol.created_at < '$to' AND se.score >= 1.0 AND rsol.visibility > 0");
         } else {
             echo "Invalid type $type (assignment or reference expected).\n";
             return;

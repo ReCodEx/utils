@@ -700,19 +700,35 @@ class Exercises extends BaseCommand
         return count($lines);
     }
 
-    public function getSolutionsLocs($solutionsDir = '/var/recodex-filestorage/local/solutions')
+    public function getSolutionsLocs($type = 'assignment', $solutionsDir = '/var/recodex-filestorage/local/solutions')
     {
-        $solutions = $this->db->query("SELECT e.id AS exercise_id, sol.subdir, sol.id, sol.runtime_environment_id, rt.extensions
-            FROM assignment_solution AS asol
-            JOIN solution AS sol ON sol.id = asol.solution_id
-            JOIN assignment_solution_submission AS asub ON asub.id = asol.last_submission_id
-            JOIN solution_evaluation AS se ON se.id = asub.evaluation_id
-            JOIN assignment AS ass ON ass.id = asol.assignment_id
-            JOIN exercise AS e ON e.id = ass.exercise_id
-            JOIN runtime_environment AS rt ON sol.runtime_environment_id = rt.id
-            WHERE e.deleted_at IS NULL AND ass.deleted_at IS NULL AND ass.created_at > '2021-10-01 00:00:00' AND sol.created_at < '2023-10-01 00:00:00'
-                AND se.score >= 1.0");
-        
+        $from = '2021-10-01 00:00:00';
+        $to = '2023-10-01 00:00:00';
+        if ($type === 'assignment') {
+            $solutions = $this->db->query("SELECT e.id AS exercise_id, sol.subdir, sol.id, sol.runtime_environment_id, rt.extensions
+                FROM assignment_solution AS asol
+                JOIN solution AS sol ON sol.id = asol.solution_id
+                JOIN assignment_solution_submission AS asub ON asub.id = asol.last_submission_id
+                JOIN solution_evaluation AS se ON se.id = asub.evaluation_id
+                JOIN assignment AS ass ON ass.id = asol.assignment_id
+                JOIN exercise AS e ON e.id = ass.exercise_id
+                JOIN runtime_environment AS rt ON sol.runtime_environment_id = rt.id
+                WHERE e.deleted_at IS NULL AND ass.deleted_at IS NULL AND sol.created_at >= '$from' AND sol.created_at < '$to'
+                    AND se.score >= 1.0");
+        } elseif ($type === 'reference') {
+            $solutions = $this->db->query("SELECT e.id AS exercise_id, sol.subdir, sol.id, sol.runtime_environment_id, rt.extensions
+                FROM reference_exercise_solution AS rsol
+                JOIN solution AS sol ON sol.id = rsol.solution_id
+                JOIN reference_solution_submission AS rsub ON rsub.id = rsol.last_submission_id
+                JOIN solution_evaluation AS se ON se.id = rsub.evaluation_id
+                JOIN exercise AS e ON e.id = rsol.exercise_id
+                JOIN runtime_environment AS rt ON sol.runtime_environment_id = rt.id
+                WHERE e.deleted_at IS NULL AND sol.created_at > '$from' AND sol.created_at < '$to' AND se.score >= 1.0");
+        } else {
+            echo "Invalid type $type (assignment or reference expected).\n";
+            return;
+        }
+
         $res = [];
         foreach ($solutions as $solution) {
             $zipFile = $solutionsDir . '/' . $solution->subdir . '/' . $solution->id . '.zip';
@@ -744,9 +760,10 @@ class Exercises extends BaseCommand
                 $locs = $this->getLocs($content ? $content : '');
                 if ($content) {
                     $res[$solution->exercise_id] = $res[$solution->exercise_id] ?? [];
-                    $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id] ?? [0, 0];
-                    $res[$solution->exercise_id][$solution->runtime_environment_id][0] += $locs;
-                    $res[$solution->exercise_id][$solution->runtime_environment_id][1] += 1;
+                    $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id] ?? [0, 0, 0];
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][0] += 1;
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][1] += $locs;
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][2] += ($locs * $locs);
                 }
             }
             $zip->close();
@@ -754,7 +771,11 @@ class Exercises extends BaseCommand
 
         foreach ($res as $eid => $exercise) {
             foreach ($exercise as $rte => $stats) {
-                echo "$eid,$rte,$stats[0],$stats[1]\n";
+                if ($stats[0] > 0) {
+                    $mean = (float)$stats[1] / (float)$stats[0];
+                    $stdev = sqrt((float)$stats[2] - ($mean * $mean));
+                    echo "$eid,$rte,$mean,$stdev\n";
+                }
             }
         }
     }

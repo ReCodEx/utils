@@ -769,12 +769,13 @@ class Exercises extends BaseCommand
             $zip->close();
         }
 
+        echo "id,runtime,count,mean,stdev\n";
         foreach ($res as $eid => $exercise) {
             foreach ($exercise as $rte => $stats) {
                 if ($stats[0] > 0) {
                     $mean = (float)$stats[1] / (float)$stats[0];
                     $stdev = sqrt((float)$stats[2] - ($mean * $mean));
-                    echo "$eid,$rte,$mean,$stdev\n";
+                    echo "$eid,$rte,$stats[0],$mean,$stdev\n";
                 }
             }
         }

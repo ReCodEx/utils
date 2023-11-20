@@ -755,6 +755,7 @@ class Exercises extends BaseCommand
 
             $count = $zip->count();
             $pattern = $extensions[0] === '*' ? null : '/[.](' . join('|', $extensions) . ')$/';
+            $locsSum = 0;
             for ($i = 0; $i < $count; ++$i) {
                 $name = $zip->getNameIndex($i);
                 if ($pattern) {
@@ -766,18 +767,19 @@ class Exercises extends BaseCommand
                 }
 
                 $content = $zip->getFromIndex($i);
-                $locs = $this->getLocs($content ? $content : '', $solution->runtime_environment_id);
                 if ($content) {
+                    $locs = $this->getLocs($content ? $content : '', $solution->runtime_environment_id);
+                    $locsSum += $locs;
                     $res[$solution->exercise_id] = $res[$solution->exercise_id] ?? [];
                     $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id]
                         ?? [0, 0, 0, PHP_INT_MAX];
-                    $res[$solution->exercise_id][$solution->runtime_environment_id][0] += 1;
-                    $res[$solution->exercise_id][$solution->runtime_environment_id][1] += $locs;
-                    $res[$solution->exercise_id][$solution->runtime_environment_id][2] += ($locs * $locs);
-                    $res[$solution->exercise_id][$solution->runtime_environment_id][3] = min($locs, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][0] += 1;        
                 }
             }
             $zip->close();
+            $res[$solution->exercise_id][$solution->runtime_environment_id][1] += $locsSum;
+            $res[$solution->exercise_id][$solution->runtime_environment_id][2] += ($locsSum * $locsSum);
+            $res[$solution->exercise_id][$solution->runtime_environment_id][3] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
         }
 
         if ($type === 'assignment') {

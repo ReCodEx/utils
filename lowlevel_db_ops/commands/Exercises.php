@@ -760,23 +760,30 @@ class Exercises extends BaseCommand
                 $locs = $this->getLocs($content ? $content : '');
                 if ($content) {
                     $res[$solution->exercise_id] = $res[$solution->exercise_id] ?? [];
-                    $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id] ?? [0, 0, 0];
+                    $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id]
+                        ?? [0, 0, 0, PHP_INT_MAX];
                     $res[$solution->exercise_id][$solution->runtime_environment_id][0] += 1;
                     $res[$solution->exercise_id][$solution->runtime_environment_id][1] += $locs;
                     $res[$solution->exercise_id][$solution->runtime_environment_id][2] += ($locs * $locs);
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][3] = min($locs, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
                 }
             }
             $zip->close();
         }
 
-        echo "id,runtime,count,mean,stdev\n";
+        if ($type === 'assignment') {
+            echo "id,runtime,solution_files,solution_min_locs,solution_avg_locs,solution_locs_stdev\n";
+        } else {
+            echo "id,runtime,refs_files,refs_min_locs,refs_avg_locs,refs_locs_stdev\n";
+        }
         foreach ($res as $eid => $exercise) {
             foreach ($exercise as $rte => $stats) {
                 if ($stats[0] > 0) {
+                    $min = $stats[3];
                     $mean = (float)$stats[1] / (float)$stats[0];
                     $mean2 = (float)$stats[2] / (float)$stats[0];
                     $stdev = sqrt($mean2 - ($mean * $mean));
-                    echo "$eid,$rte,$stats[0],$mean,$stdev\n";
+                    echo "$eid,$rte,$stats[0],$min,$mean,$stdev\n";
                 }
             }
         }

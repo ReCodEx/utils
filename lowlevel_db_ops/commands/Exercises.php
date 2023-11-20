@@ -781,7 +781,7 @@ class Exercises extends BaseCommand
                 $res[$solution->exercise_id][$solution->runtime_environment_id][1] += 1;
                 $res[$solution->exercise_id][$solution->runtime_environment_id][2] += $locsSum;
                 $res[$solution->exercise_id][$solution->runtime_environment_id][3] += ($locsSum * $locsSum);
-                $res[$solution->exercise_id][$solution->runtime_environment_id][4] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
+                $res[$solution->exercise_id][$solution->runtime_environment_id][4] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][4]);
             }
         }
 

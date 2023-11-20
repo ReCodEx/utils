@@ -700,7 +700,7 @@ class Exercises extends BaseCommand
             $commentPattern = '/^\\s*#.*$/';
         }
         $lines = explode("\n", $content);
-        $lines = array_filter($lines, function ($line) {
+        $lines = array_filter($lines, function ($line) use ($commentPattern) {
             if ($commentPattern) {
                 $line = preg_replace($commentPattern, '', $line);
             }

@@ -772,15 +772,16 @@ class Exercises extends BaseCommand
                     $locsSum += $locs;
                     $res[$solution->exercise_id] = $res[$solution->exercise_id] ?? [];
                     $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id]
-                        ?? [0, 0, 0, PHP_INT_MAX];
+                        ?? [0, 0, 0, 0, PHP_INT_MAX];
                     $res[$solution->exercise_id][$solution->runtime_environment_id][0] += 1;        
                 }
             }
             $zip->close();
             if ($locsSum > 0) {
-                $res[$solution->exercise_id][$solution->runtime_environment_id][1] += $locsSum;
-                $res[$solution->exercise_id][$solution->runtime_environment_id][2] += ($locsSum * $locsSum);
-                $res[$solution->exercise_id][$solution->runtime_environment_id][3] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
+                $res[$solution->exercise_id][$solution->runtime_environment_id][1] += 1;
+                $res[$solution->exercise_id][$solution->runtime_environment_id][2] += $locsSum;
+                $res[$solution->exercise_id][$solution->runtime_environment_id][3] += ($locsSum * $locsSum);
+                $res[$solution->exercise_id][$solution->runtime_environment_id][4] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
             }
         }
 
@@ -791,10 +792,10 @@ class Exercises extends BaseCommand
         }
         foreach ($res as $eid => $exercise) {
             foreach ($exercise as $rte => $stats) {
-                if ($stats[0] > 0) {
-                    $min = $stats[3];
-                    $mean = (float)$stats[1] / (float)$stats[0];
-                    $mean2 = (float)$stats[2] / (float)$stats[0];
+                if ($stats[1] > 0) {
+                    $min = $stats[4];
+                    $mean = (float)$stats[2] / (float)$stats[1];
+                    $mean2 = (float)$stats[3] / (float)$stats[1];
                     $stdev = sqrt($mean2 - ($mean * $mean));
                     echo "$eid,$rte,$stats[0],$min,$mean,$stdev\n";
                 }

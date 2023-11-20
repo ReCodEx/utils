@@ -767,12 +767,6 @@ class Exercises extends BaseCommand
 
                 $content = $zip->getFromIndex($i);
                 $locs = $this->getLocs($content ? $content : '', $solution->runtime_environment_id);
-                $locs2 = $this->getLocs($content ? $content : '');
-                if ($locs !== $locs2) {
-                    echo $solution->exercise_id, ' ', $solution->id, " $name $locs $locs2\n";
-                }
-
-
                 if ($content) {
                     $res[$solution->exercise_id] = $res[$solution->exercise_id] ?? [];
                     $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id]
@@ -785,7 +779,6 @@ class Exercises extends BaseCommand
             }
             $zip->close();
         }
-        return;
 
         if ($type === 'assignment') {
             echo "id,runtime,solution_files,solution_min_locs,solution_avg_locs,solution_locs_stdev\n";

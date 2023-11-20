@@ -701,6 +701,9 @@ class Exercises extends BaseCommand
         }
         $lines = explode("\n", $content);
         $lines = array_filter($lines, function ($line) {
+            if ($commentPattern) {
+                $line = preg_replace($commentPattern, '', $line);
+            }
             return trim($line) !== '';
         });
         return count($lines);

@@ -777,9 +777,11 @@ class Exercises extends BaseCommand
                 }
             }
             $zip->close();
-            $res[$solution->exercise_id][$solution->runtime_environment_id][1] += $locsSum;
-            $res[$solution->exercise_id][$solution->runtime_environment_id][2] += ($locsSum * $locsSum);
-            $res[$solution->exercise_id][$solution->runtime_environment_id][3] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
+            if ($locsSum > 0) {
+                $res[$solution->exercise_id][$solution->runtime_environment_id][1] += $locsSum;
+                $res[$solution->exercise_id][$solution->runtime_environment_id][2] += ($locsSum * $locsSum);
+                $res[$solution->exercise_id][$solution->runtime_environment_id][3] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][3]);
+            }
         }
 
         if ($type === 'assignment') {

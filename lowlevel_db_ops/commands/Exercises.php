@@ -691,8 +691,14 @@ class Exercises extends BaseCommand
         }
     }
 
-    private function getLocs($content)
+    private function getLocs($content, $runtime = null)
     {
+        $commentPattern = null;
+        if ($runtime && in_array($runtime, ['cs-dotnet-core', 'java', 'c-gcc-linux', 'arduino-gcc', 'cpp-bison-flex', 'cxx-gcc-linux', 'node-linux', 'php-linux' ])) {
+            $commentPattern = '~^\\s*[/]{2}.*$~';
+        } elseif ($runtime === 'python3' || $runtime === 'bash') {
+            $commentPattern = '/^\\s*#.*$/';
+        }
         $lines = explode("\n", $content);
         $lines = array_filter($lines, function ($line) {
             return trim($line) !== '';
@@ -757,7 +763,13 @@ class Exercises extends BaseCommand
                 }
 
                 $content = $zip->getFromIndex($i);
-                $locs = $this->getLocs($content ? $content : '');
+                $locs = $this->getLocs($content ? $content : '', $solution->runtime_environment_id);
+                $locs2 = $this->getLocs($content ? $content : '');
+                if ($locs !== $locs2) {
+                    echo $solution->exercise_id, ' ', $solution->id, " $name $locs $locs2\n";
+                }
+
+
                 if ($content) {
                     $res[$solution->exercise_id] = $res[$solution->exercise_id] ?? [];
                     $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id]
@@ -770,10 +782,11 @@ class Exercises extends BaseCommand
             }
             $zip->close();
         }
+        return;
 
         if ($type === 'assignment') {
             echo "id,runtime,solution_files,solution_min_locs,solution_avg_locs,solution_locs_stdev\n";
-        } else {
+        } elseif ($type === 'reference') {
             echo "id,runtime,refs_files,refs_min_locs,refs_avg_locs,refs_locs_stdev\n";
         }
         foreach ($res as $eid => $exercise) {

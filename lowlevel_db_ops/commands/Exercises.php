@@ -698,6 +698,10 @@ class Exercises extends BaseCommand
             $commentPattern = '~^\\s*[/]{2}.*$~';
         } elseif ($runtime === 'python3' || $runtime === 'bash') {
             $commentPattern = '/^\\s*#.*$/';
+        } elseif ($runtime === 'haskell') {
+            $commentPattern = '/^\\s*--.*$/';
+        } elseif ($runtime === 'prolog') {
+            $commentPattern = '/^\\s*%.*$/';
         }
         $lines = explode("\n", $content);
         $lines = array_filter($lines, function ($line) use ($commentPattern) {

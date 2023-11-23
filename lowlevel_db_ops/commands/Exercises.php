@@ -775,9 +775,10 @@ class Exercises extends BaseCommand
                     $locs = $this->getLocs($content ? $content : '', $solution->runtime_environment_id);
                     $locsSum += $locs;
                     $res[$solution->exercise_id] = $res[$solution->exercise_id] ?? [];
-                    $res[$solution->exercise_id][$solution->runtime_environment_id] = $res[$solution->exercise_id][$solution->runtime_environment_id]
-                        ?? [0, 0, 0, 0, PHP_INT_MAX];
-                    $res[$solution->exercise_id][$solution->runtime_environment_id][0] += 1;        
+                    if (empty($res[$solution->exercise_id][$solution->runtime_environment_id])) {
+                        $res[$solution->exercise_id][$solution->runtime_environment_id] = [0, 0, 0, 0, PHP_INT_MAX, null];
+                    }
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][0] += 1;
                 }
             }
             $zip->close();
@@ -785,23 +786,27 @@ class Exercises extends BaseCommand
                 $res[$solution->exercise_id][$solution->runtime_environment_id][1] += 1;
                 $res[$solution->exercise_id][$solution->runtime_environment_id][2] += $locsSum;
                 $res[$solution->exercise_id][$solution->runtime_environment_id][3] += ($locsSum * $locsSum);
-                $res[$solution->exercise_id][$solution->runtime_environment_id][4] = min($locsSum, $res[$solution->exercise_id][$solution->runtime_environment_id][4]);
+                if ($locsSum < $res[$solution->exercise_id][$solution->runtime_environment_id][4]) {
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][4] = $locsSum;
+                    $res[$solution->exercise_id][$solution->runtime_environment_id][5] = $solution->id;
+                }
             }
         }
 
         if ($type === 'assignment') {
-            echo "id,runtime,solution_files,solution_min_locs,solution_avg_locs,solution_locs_stdev\n";
+            echo "id,runtime,solution_files,solution_min_locs,solution_min_locs_id,solution_avg_locs,solution_locs_stdev\n";
         } elseif ($type === 'reference') {
-            echo "id,runtime,refs_files,refs_min_locs,refs_avg_locs,refs_locs_stdev\n";
+            echo "id,runtime,refs_files,refs_min_locs,refs_min_locs_id,refs_avg_locs,refs_locs_stdev\n";
         }
         foreach ($res as $eid => $exercise) {
             foreach ($exercise as $rte => $stats) {
                 if ($stats[1] > 0) {
                     $min = $stats[4];
+                    $minId = $stats[5];
                     $mean = (float)$stats[2] / (float)$stats[1];
                     $mean2 = (float)$stats[3] / (float)$stats[1];
                     $stdev = sqrt($mean2 - ($mean * $mean));
-                    echo "$eid,$rte,$stats[0],$min,$mean,$stdev\n";
+                    echo "$eid,$rte,$stats[0],$min,$minId,$mean,$stdev\n";
                 }
             }
         }

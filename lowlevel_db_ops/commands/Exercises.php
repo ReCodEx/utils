@@ -703,6 +703,11 @@ class Exercises extends BaseCommand
         } elseif ($runtime === 'prolog') {
             $commentPattern = '/^\\s*%.*$/';
         }
+
+        // fix line endings
+        $lines = preg_replace("/\r+\n/", "\n", $lines);
+        $lines = str_replace("\r", "\n", $lines);
+
         $lines = explode("\n", $content);
         $lines = array_filter($lines, function ($line) use ($commentPattern) {
             if ($commentPattern) {

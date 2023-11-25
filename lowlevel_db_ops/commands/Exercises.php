@@ -705,10 +705,10 @@ class Exercises extends BaseCommand
         }
 
         // fix line endings
-        $lines = preg_replace("/\r+\n/", "\n", $lines);
-        $lines = str_replace("\r", "\n", $lines);
+        $fixedContent = preg_replace("/\r+\n/", "\n", $content);
+        $fixedContent = str_replace("\r", "\n", $fixedContent);
 
-        $lines = explode("\n", $content);
+        $lines = explode("\n", $fixedContent);
         $lines = array_filter($lines, function ($line) use ($commentPattern) {
             if ($commentPattern) {
                 $line = preg_replace($commentPattern, '', $line);

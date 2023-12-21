@@ -4,7 +4,7 @@ import argparse
 import os
 import glob
 import pathlib
-from ruamel import yaml
+from ruamel.yaml import YAML
 import recodex_api
 from metadata import MetadataHandler
 
@@ -32,7 +32,8 @@ def load_config(cfg_file):
     Load configuration yaml file and parse it.
     '''
     with open(cfg_file, "r") as fp:
-        config = yaml.safe_load(fp)
+        yaml = YAML(typ="safe")
+        config = yaml.load(fp)
     return config
 
 

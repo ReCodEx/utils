@@ -39,6 +39,8 @@ solutions:
 #  correctness: 100  # correctness must be greater or equal this threshold [%]
 #  maxAge: 86400  # maximal age (based on current time) of the solution
 #  createdAt: 1674382629  # unix timestamp, only solutions with createdAt equal or greater are downloaded
+  include_files: '.*'  # Regex (or list of regexes) of file names that are included in the manifest (in per-file mode), if multiple regexes are provided, union of results is included
+  exclude_files: null  # Regex (or list of regexes) of file names that are excluded (exclusion is done after inclusion, any match will lead to exclusion if multiple regexes are given)
 
 # list of groups that should be searched for solutions
 groups:

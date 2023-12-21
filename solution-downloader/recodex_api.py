@@ -4,7 +4,7 @@ import os
 import zipfile
 import shutil
 import time
-from ruamel import yaml
+from ruamel.yaml import YAML
 
 group_cache = None
 
@@ -36,7 +36,8 @@ def _get_all_groups(archived=False):
     payload = _recodex_call(args)
     if payload is None:
         raise Exception("Error reading groups list.")
-    groups = yaml.safe_load(payload)
+    yaml = YAML(typ="safe")
+    groups = yaml.load(payload)
 
     res = {}
     for group in groups:
@@ -79,7 +80,8 @@ def get_user(user_id):
     if payload is None:
         raise Exception("Error loading user {}.".format(user_id))
 
-    return yaml.safe_load(payload)
+    yaml = YAML(typ="safe")
+    return yaml.load(payload)
 
 
 def get_students(group_id):
@@ -90,7 +92,8 @@ def get_students(group_id):
     if payload is None:
         raise Exception("Error reading students of group {}.".format(group_id))
 
-    return yaml.safe_load(payload)
+    yaml = YAML(typ="safe")
+    return yaml.load(payload)
 
 
 def get_assignments(group_id, exercise_id):
@@ -102,7 +105,8 @@ def get_assignments(group_id, exercise_id):
         raise Exception("Error reading assignments of group.")
 
     res = []
-    assignments = yaml.safe_load(payload)
+    yaml = YAML(typ="safe")
+    assignments = yaml.load(payload)
     for assignment in assignments:
         if assignment.get('exerciseId', None) == exercise_id:
             res.append(assignment)
@@ -164,8 +168,8 @@ def get_solutions(assignment_id, config):
     payload = _recodex_call(['assignments', 'get-solutions', assignment_id, '--yaml'])
     if payload is None:
         raise Exception("Error reading solutions of an assignment.")
-
-    solutions = yaml.safe_load(payload)
+    yaml = YAML(typ="safe")
+    solutions = yaml.load(payload)
     result = []
     for solution in solutions:
         if _filter_solution(solution, config):
@@ -198,4 +202,5 @@ def get_solution_files(solution_id):
     Retrieve a list of submitted files for given solution.
     '''
     payload = _recodex_call(['solutions', 'get-files', solution_id, '--yaml'])
-    return yaml.safe_load(payload)
+    yaml = YAML(typ="safe")
+    return yaml.load(payload)

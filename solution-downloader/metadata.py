@@ -3,6 +3,7 @@ import csv
 import os
 import recodex_api
 from translator import AttributeTranslator
+from name_filter import NameFilter
 
 
 def normalize_str(str):
@@ -50,6 +51,8 @@ class MetadataHandler:
         self.translators = []
         for name, trans_config in config.get('translated_attributes', {}).items():
             self.translators.append(AttributeTranslator(name, trans_config, config_dir))
+
+        self.name_filter = NameFilter(config.get('solutions', {}))
 
     def _fetch(self, parameter, safe=False):
         '''
@@ -185,19 +188,28 @@ class MetadataHandler:
         if self.manifest_fp is not None:
             if self.manifest_per_file:
                 pwd = os.getcwd()
-                os.chdir(self.get_path())
+                # os.chdir(self.get_path()) # TODO - check whether mainfest files really exist
                 path = self.metadata['path']  # save solution path
 
                 for file in recodex_api.get_solution_files(self.metadata['solution']['id']):
                     self.metadata['file'] = file
                     if 'zipEntries' in file:
                         for entry in file['zipEntries']:
+                            file_name = file['name'] + '#' + entry['name']
+                            if not self.name_filter.valid_name(file_name):
+                                print("File {} was filtered out.".format(file_name))
+                                continue
+
                             self.metadata['path'] = path + '/' + entry['name']
-                            self.metadata['fileName'] = file['name'] + '#' + entry['name']
+                            self.metadata['fileName'] = file_name
                             self.metadata['zipEntry'] = entry
                             self._write_manifest_row()
 
                     else:
+                        if not self.name_filter.valid_name(file['name']):
+                            print("File {} was filtered out.".format(file['name']))
+                            continue
+
                         self.metadata['path'] = path + '/' + file['name']
                         self.metadata['fileName'] = file['name']
                         self._write_manifest_row()

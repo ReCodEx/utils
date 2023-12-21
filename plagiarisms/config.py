@@ -1,6 +1,6 @@
 import os
 import glob
-from ruamel import yaml
+from ruamel.yaml import YAML
 
 
 def _find_file(file, fallback_wildcard):
@@ -33,7 +33,8 @@ def load_config(cfg_file):
     '''
     cfg_file = _find_file(cfg_file, './config.yaml')
     with open(cfg_file, "r", encoding="utf8") as fp:
-        config = yaml.safe_load(fp)
+        yaml = YAML(typ="safe")
+        config = yaml.load(fp)
 
     # fix relative paths
     base = os.path.dirname(cfg_file)

@@ -1,7 +1,7 @@
 import os
 import shutil
 import csv
-from ruamel import yaml
+from ruamel.yaml import YAML
 import subprocess
 import logging
 
@@ -60,6 +60,7 @@ class Downloader:
         new_config['manifest']['solution_id'] = 'solution.id'
 
         with open(self._get_config_file(), 'w') as fp:
+            yaml = YAML(typ="safe")
             yaml.dump(new_config, fp)
 
     def _verify_download(self):

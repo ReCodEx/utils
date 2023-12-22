@@ -10,18 +10,29 @@ sys.argv.pop(0)
 # Read the input file
 script = Path(sys.argv[0])
 
-with script.open('rb') as script_file:
-    # If we received a source file, compile it (and leave bytecode as is)
-    if script.suffix != ".pyc":
-        code = compile(script_file.read(), str(script), "exec")
-    else:
-        code = read_code(script_file)
+try:
+    try:
+        with script.open('rb') as script_file:
+            # If we received a source file, compile it (leave bytecode as is)
+            if script.suffix != ".pyc":
+                code = compile(script_file.read(), str(script), "exec")
+            else:
+                code = read_code(script_file)
+    except BaseException:
+        import traceback
+        traceback.print_exc()
+        raise
+except SyntaxError:
+    sys.exit(114)  # syntax errors can happen in compilation as well
+except BaseException:
+    sys.exit(2)
+
 
 # Run the code and convert exceptions to error codes
 try:
     try:
         exec(code)
-    except:
+    except BaseException:
         import traceback
         traceback.print_exc()
         raise

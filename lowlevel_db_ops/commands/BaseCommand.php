@@ -69,6 +69,12 @@ class BaseCommand
         return $this->db->query("SELECT * FROM exercise WHERE deleted_at IS NULL");
     }
     
+    protected function getExercisesOfRuntime($runtime)
+    {
+        return $this->db->query("SELECT * FROM exercise AS e JOIN exercise_runtime_environment AS ere ON ere.exercise_id = e.id
+            WHERE e.deleted_at IS NULL AND ere.runtime_environment_id = ?", $runtime);
+    }
+    
     protected function getExercisesWithRefs()
     {
         $res = [];
@@ -132,7 +138,11 @@ class BaseCommand
     protected function getExerciseConfig($configId)
     {
         $configYaml = $this->db->fetchSingle('SELECT config FROM exercise_config WHERE id = ?', $configId);
-        return yaml_parse($configYaml);
+        //return yaml_parse($configYaml);
+        while (is_string($configYaml)) {
+            $configYaml = yaml_parse($configYaml);
+        }
+        return $configYaml;
     }
 
     protected function getExercisesConfigs($onlyUsed = false)

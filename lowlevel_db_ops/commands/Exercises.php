@@ -422,6 +422,70 @@ class Exercises extends BaseCommand
         }
     }
 
+    private function removeVariable($variables, $varName)
+    {
+        return array_values(array_filter($variables, function ($var) use ($varName) {
+            return $var['name'] !== $varName;
+        }));
+    }
+
+    private function setVariable($variables, $varName, $varType = null, $varValue = null)
+    {
+        $exists = false;
+        foreach ($variables as $var) {
+            if ($var['name'] === $varName) {
+                $var['type'] = $varType;
+                if ($varValue !== null) {
+                    $var['value'] = $varValue;
+                }
+                $exists = true;
+            }
+        }
+
+        if (!$exists) {
+            $variables[] = [
+                'name' => $varName,
+                'type' => $varType,
+                'value' => $varValue,
+            ];
+        }
+
+        return $variables;
+    }
+    
+    public function setConfigVariable($runtime, $pipeline, $varName, $varType = null, $varValue = null)
+    {
+        if ($varValue) {
+            $varValue = yaml_parse($varValue);
+        }
+
+        $exercises = $this->getExercisesOfRuntime($runtime);
+        foreach ($exercises as $exercise) {
+            $config = $this->getExerciseConfig($exercise->exercise_config_id);
+            $oldConfig = yaml_emit($config);
+
+            foreach ($config['tests'] as &$test) {
+                foreach ($test['environments'] as $env => &$testEnv) {
+                    if ($env !== $runtime) continue;
+                    foreach ($testEnv['pipelines'] as &$testPipeline) {
+                        if ($testPipeline['name'] !== $pipeline) continue;
+                        if ($varType === null) {
+                            $testPipeline['variables'] = $this->removeVariable($testPipeline['variables'], $varName);
+                        } else {
+                            $testPipeline['variables'] = $this->setVariable($testPipeline['variables'], $varName, $varType, $varValue);
+                        }
+                    }
+                }
+            }
+
+            $newConfig = yaml_emit($config);
+            if ($oldConfig !== $newConfig) {
+                $this->db->query('UPDATE exercise_config SET', ['config' => $newConfig], 'WHERE id = ?', $exercise->exercise_config_id);
+                echo "Exercise $exercise->id config updated\n";
+            }
+        }
+    }
+
 
     public function getSusForks()
     {

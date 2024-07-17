@@ -22,10 +22,11 @@ fi
 cat ./ref-project/pom.xml.template | sed "s/{{JAVA_VERSION}}/${JAVA_VERSION}/g" > ./ref-project/pom.xml
 
 rm -rf ./.m2
-/opt/maven/bin/mvn -Dmaven.repo.local=./.m2 -f ./ref-project clean compile && /opt/maven/bin/mvn -Dmaven.repo.local=./.m2 -f ./ref-project exec:java && /opt/maven/bin/mvn -Dmaven.repo.local=./.m2 -f ./ref-project package
+/opt/maven/bin/mvn -Dmaven.repo.local=./.m2 -f ./ref-project clean compile && /opt/maven/bin/mvn -Dmaven.repo.local=./.m2 -f ./ref-project exec:java && /opt/maven/bin/mvn -Dmaven.repo.local=./.m2 -f ./ref-project package && /opt/maven/bin/mvn -Dmaven.repo.local=./.m2 -f ./ref-project test
 RES=$?
 
 if [[ $RES != 0 ]]; then
 	echo "Compilatio or execution failed!"
 	exit $RES
 fi
+

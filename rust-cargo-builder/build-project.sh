@@ -1,7 +1,14 @@
 #!/bin/bash
 
 cd `dirname "$0"` || exit 1
+BUILDER=`pwd`
+BUILDER=`basename "$BUILDER"`
+cd ..
 BASE=`pwd`
+if [ ! -d "./$BUILDER" ]; then
+	echo "Cannot find my own directory, something is really odd..."
+	exit 200
+fi
 
 BOX=/box
 if [ ! -d $BOX ]; then
@@ -22,10 +29,10 @@ NAME=project
 echo "Preparing project solution template..."
 rm -rf ./$NAME
 cargo init $NAME
-rm -r ./$NAME/src ./$NAME/.cargo ./$NAME/Cargo.toml
-cp -r ./src ./$NAME
-cp -r ./.cargo ./$NAME
-cp ./Cargo.toml ./$NAME
+rm -r ./$NAME/src ./$NAME/.cargo ./$NAME/Cargo.toml ./$NAME/.git ./$NAME/.gitignore
+cp -r ./$BUILDER/src ./$NAME || exit 201
+cp -r ./$BUILDER/.cargo ./$NAME || exit 201
+cp ./$BUILDER/Cargo.toml ./$NAME || exit 201
 
 echo "Loading dependencies into ./vendor directory..."
 cd ./$NAME || exit 1

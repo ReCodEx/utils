@@ -203,4 +203,138 @@ class Stats extends BaseCommand
             echo $day->cyear, '-', $day->cmonth, '-', $day->cday, ';', $day->solutions, "\n";
         }
     }
+
+    public function solutions($year, ...$parentGroups)
+    {
+        // find right semestral groups
+        $allGroups = $this->getGroups(true);
+        $groups = [];
+        foreach ($allGroups as $group) {
+            if (str_starts_with($group->external_id, $year) && in_array($group->parent_group_id, $parentGroups)) {
+                $groups[$group->id] = $group;
+            }
+        }
+
+        // add all descendant groups
+        do {
+            $somethingAdded = false;
+            foreach ($allGroups as $group) {
+                if (!array_key_exists($group->id, $groups) && array_key_exists($group->parent_group_id, $groups)) {
+                    $groups[$group->id] = $group;
+                    $somethingAdded = true;
+                }
+            }
+        } while ($somethingAdded);
+
+        $solversData = $this->db->query("SELECT aslv.*
+            FROM assignment_solver AS aslv JOIN assignment AS ass ON ass.id = aslv.assignment_id
+            WHERE ass.group_id IN (?) AND ass.deleted_at IS NULL
+            ORDER BY aslv.assignment_id, aslv.solver_id",
+            array_keys($groups));
+        
+        $solvers = [];
+        foreach ($solversData as $sd) {
+            $solvers[$sd->assignment_id][$sd->solver_id] = (int)$sd->last_attempt_index;
+        }
+
+        $solutions = $this->db->query("SELECT ass.group_id AS group_id, ass.id AS assignment_id,
+            sol.author_id AS user_id, asol.attempt_index AS attempt_index, se.score AS score
+            FROM assignment_solution AS asol
+            JOIN solution AS sol ON sol.id = asol.solution_id
+            JOIN assignment AS ass ON ass.id = asol.assignment_id
+            JOIN assignment_solution_submission AS asub ON asub.id = asol.last_submission_id
+            LEFT JOIN solution_evaluation AS se ON se.id = asub.evaluation_id
+            WHERE ass.group_id IN (?) AND ass.deleted_at IS NULL
+            ORDER BY 1, 2, 3, 4",
+            array_keys($groups));
+
+        $comments = $this->db->fetch("SELECT AVG(review_comments) AS review_comments, AVG(comments) AS comments, AVG(commented_solutions / solutions) AS commented_solutions
+            FROM (
+            SELECT ass.id AS assignment_id, sol.author_id AS user_id, COUNT(rc.id) AS review_comments, COUNT(c.id) AS comments,
+                COUNT(DISTINCT asol.id) AS solutions, (
+                    SELECT COUNT(*) FROM assignment_solution AS asol2 JOIN solution AS sol2 ON sol2.id = asol2.solution_id
+                    WHERE asol2.assignment_id = asol.assignment_id AND sol2.author_id = sol.author_id AND
+                    (EXISTS (SELECT * FROM comment AS c2 WHERE c2.comment_thread_id = asol2.id) OR
+                    EXISTS (SELECT * FROM review_comment AS rc2 WHERE rc2.solution_id = asol2.id))
+                ) AS commented_solutions
+            FROM assignment_solution AS asol
+            JOIN solution AS sol ON sol.id = asol.solution_id
+            JOIN assignment AS ass ON ass.id = asol.assignment_id
+            LEFT JOIN review_comment AS rc ON rc.solution_id = asol.id
+            LEFT JOIN comment AS c ON c.comment_thread_id = asol.id
+            WHERE ass.group_id IN (?) AND ass.deleted_at IS NULL
+            GROUP BY ass.id, sol.author_id) AS t",
+            array_keys($groups));
+            
+        $data = [];
+        foreach ($solutions as $s) {
+            $data[$s->group_id][$s->assignment_id][$s->user_id][$s->attempt_index] = $s->score;
+        }
+        
+        $assCount = [];
+        $solverCount = [];
+        $solutionsCount = [];
+        $notCorrectCount = [];
+        $bestScore = [];
+        $studentTried = [];
+        $studentSolved = [];
+        foreach ($data as $gid => $gdata) {
+            $assCount[] = count($gdata);
+            $studentTriedGrp = [];
+            $studentSolvedGrp = [];
+            foreach ($gdata as $aid => $gadata) {
+                foreach ($gadata as $uid => $gaudata) {
+                    if (!empty($solvers[$aid][$uid])) {
+                        $solverCount[$uid] = true;
+
+                        // fix data (fill in deleted solutions)
+                        for ($i = 1; $i <= $solvers[$aid][$uid]; ++$i) {
+                            if (!array_key_exists($i, $gaudata)) {
+                                $gaudata[$i] = null;
+                            }
+                        }
+
+                        $solutionsCount[] = count($gaudata);
+                        $notNull = array_map(function($s) { return (float)$s; }, array_filter($gaudata, function ($score) { return $score !== null && $score !== ''; }));
+                        $best = $notNull ? max($notNull) : 0;
+                        $bestScore[] = $best;
+                        $notCorrect = array_filter($notNull, function ($score) { return (float)$score < 1.0; });
+                        $notCorrectCount[] = count($notCorrect);
+
+                        if (count($gaudata) > 0) {
+                            $studentTriedGrp[$uid] = ($studentTriedGrp[$uid] ?? 0) + 1;
+                            if ($best >= 1.0) {
+                                $studentSolvedGrp[$uid] = ($studentSolvedGrp[$uid] ?? 0) + 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (count($gdata) > 0) {
+                foreach ($studentTriedGrp as $c) {
+                    $studentTried[] = (float)$c / (float)count($gdata);
+                }
+                foreach ($studentSolvedGrp as $c) {
+                    $studentSolved[] = (float)$c / (float)count($gdata);
+                }
+            }
+        }
+
+        $results = [
+            'solvers' => count($solverCount),
+            'avg_ass' => (float)array_sum($assCount) / (float)count($assCount),
+            'avg_sol_cnt' => (float)array_sum($solutionsCount) / (float)count($solutionsCount),
+            'avg_best' => (float)array_sum($bestScore) / (float)count($bestScore),
+            'avg_wrong_cnt' => (float)array_sum($notCorrectCount) / (float)count($notCorrectCount),
+            'avg_tried_ass' => (float)array_sum($studentTried) / (float)count($studentTried),
+            'avg_solved_ass' => (float)array_sum($studentSolved) / (float)count($studentSolved),
+            'comments' => $comments->comments,
+            'review_comments' => $comments->review_comments,
+            'commented_solutions' => $comments->commented_solutions,
+        ];
+
+        fputcsv(STDOUT, array_keys($results));
+        fputcsv(STDOUT, array_values($results));
+    }
 }

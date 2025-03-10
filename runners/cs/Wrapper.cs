@@ -93,8 +93,9 @@ namespace CodEx {
 			} catch (TargetInvocationException invocationException) {
 				Exception e = invocationException.InnerException;
 				Console.Error.WriteLine("Unhandled {0} caught: {1}", e.GetType().FullName, e.Message);
+				Console.Error.WriteLine("StackTrace:\n{0}", e.StackTrace);
 
-				// Return exit code that coresponds to the type of thrown exception.
+				// Return exit code that corresponds to the type of thrown exception.
 				if (e is NullReferenceException)	return RESULT_NULL_REFERENCE_ERROR;		else
 				if (e is OutOfMemoryException)		return RESULT_MEMORY_ALLOCATION_ERROR;	else
 				if (e is IndexOutOfRangeException)	return RESULT_INDEX_OUT_OF_RANGE_ERROR;	else
@@ -107,6 +108,7 @@ namespace CodEx {
 			
 			} catch (Exception e) {
 				Console.Error.WriteLine("Unhandled {0} caught: {1}", e.GetType().FullName, e.Message);
+				Console.Error.WriteLine("StackTrace:\n{0}", e.StackTrace);
 				if (e is InvalidOperationException) return RESULT_INVALID_OPERATION_ERROR; else
 					return RESULT_INTERNAL_ERROR;
 			}

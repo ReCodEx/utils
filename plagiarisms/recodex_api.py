@@ -30,12 +30,14 @@ def create_batch(tool, tool_params):
     return id
 
 
-def close_batch(id):
+def close_batch(id, assignments):
     '''
     Mark upload of given batch as completed.
+    Mark all assignments in the batch as checked.
     '''
     logging.getLogger().debug("ReCodEx API: closing batch {}".format(id))
-    _recodex_call(['plagiarisms', 'update-batch', '--upload-completed', id])
+    input = " ".join(assignments)
+    _recodex_call(['plagiarisms', 'update-batch', '--upload-completed', '--assignments', id], input=input.encode())
 
 
 def add_similarity(batch_id, solution_id, data):

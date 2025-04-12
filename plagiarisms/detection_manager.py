@@ -50,15 +50,19 @@ def setup_logger(logger_config, file_manager):
         logger.addHandler(file_handler)
 
 
-def process_results(comparator):
+def process_results(comparator, assignments):
     '''
-    Parse the comparator output, aggregate similarity records, and upload them as a batch to ReCodEx.
+    Parse the comparator output, aggregate similarity records, and upload them
+    as a batch to ReCodEx.
+    The assignments are passed from the downloader and these assignments will
+    be marked as checked by this batch.
     '''
     logging.getLogger().debug("Parsing comparator output {}".format(comparator.get_output_file()))
     similarities = load_similarities_from_csv(
         comparator.get_output_file(), comparator.get_output_columns(), **comparator.get_output_csv_params())
     comparator_args = " ".join(comparator.get_args())
-    batch_id = save_similarities(comparator.get_name(), comparator_args, similarities)
+    batch_id = save_similarities(comparator.get_name(), comparator_args,
+                                 similarities, assignments)
     logging.getLogger().info("Similarities saved to ReCodEx as batch {}".format(batch_id))
 
 
@@ -103,7 +107,7 @@ if __name__ == "__main__":
             comparator.run()
 
             logging.getLogger().info("Uploading results to ReCodEx...")
-            process_results(comparator)
+            process_results(comparator, downloader.get_assignments())
 
             logging.getLogger().info("Updating solution archive...")
             downloader.merge_new_solutions()

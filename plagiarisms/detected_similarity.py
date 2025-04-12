@@ -75,7 +75,7 @@ def load_similarities_from_csv(file_name, columns, **kwargs):
     return result
 
 
-def save_similarities(tool_name, tool_params, similarities):
+def save_similarities(tool_name, tool_params, similarities, assignmnts):
     '''
     Save loaded similarities in one batch upload (return the batch ID).
     Similarities arg holds a list of DetectedSimilarity objects loaded from CSV.
@@ -83,5 +83,5 @@ def save_similarities(tool_name, tool_params, similarities):
     batch_id = recodex_api.create_batch(tool_name, tool_params)
     for similarity in similarities:
         similarity.upload(batch_id)
-    recodex_api.close_batch(batch_id)
+    recodex_api.close_batch(batch_id, assignments)
     return batch_id

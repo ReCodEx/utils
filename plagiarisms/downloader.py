@@ -51,13 +51,16 @@ class Downloader:
 
     def _prepare_config(self):
         '''
-        Creates a yaml config file for the downloader (mostly copying relevant parts of the given config).
-        The solutions_created_at is timestamp used to filter solutions (only newer solutions are downloaded).
+        Creates a yaml config file for the downloader (mostly copying relevant
+        parts of the given config). The solutions_created_at is timestamp used
+        to filter solutions (only newer solutions are downloaded).
         The file is saved to save_as path.
         '''
-        new_config = {key: self.config[key] for key in ['exercises', 'groups', 'manifest', 'solutions']}
+        new_config = {key: self.config[key] for key in
+                      ['exercises', 'groups', 'manifest', 'solutions']}
         new_config['path'] = ['solution.id']
         new_config['manifest']['solution_id'] = 'solution.id'
+        new_config['manifest']['assignment_id'] = 'assignment.id'
 
         with open(self._get_config_file(), 'w') as fp:
             yaml = YAML(typ="safe")
@@ -65,7 +68,8 @@ class Downloader:
 
     def _verify_download(self):
         '''
-        Verify the target dir contains the manifest file and corresponding solutions.
+        Verify the target dir contains the manifest file and corresponding
+        solutions.
         '''
         manifest_file = self.files.get_working_manifest_file()
         if not os.path.exists(manifest_file):
@@ -142,3 +146,14 @@ class Downloader:
                         if not os.path.exists(self.files.get_archive_dir() + '/' + solution_id):
                             shutil.copytree(self.files.get_working_dir() + '/' + solution_id,
                                             self.files.get_archive_dir() + '/' + solution_id)
+
+    def get_assignments(self):
+        '''
+        Return a list of unique assignments that are in the manifest file.
+        '''
+        if not os.path.exists(self.files.get_working_manifest_file()):
+            return []
+
+        with open(self.files.get_working_manifest_file(), 'r', encoding="utf8") as fin:
+            reader = csv.DictReader(fin)
+            return list(set([row['assignment_id'] for row in reader]))

@@ -68,6 +68,7 @@ The filter has the following options. If the bool flag is present, the solution 
 - `best` -- a flag indicating whether this is the best solution submitted by a user for a particular assignment (the best solution is either the accepted solution or the latest solution with the highest amount of points granted if no solution was accepted)
 - `reviewed` -- a flag indicating whether a closed review exists for a solution
 - `correctness` -- an integer with a correctness threshold in percent (only solutions with correctness greater or equal are downloaded)
+- `compilation` -- bool indicating whether the solution passed (did not pass) compilation (init phase)
 - `createdAt` -- unix timestamp, only solutions created at the given time or later are downloaded
 - `maxAge` -- similar filter like `createdAt`, but specifies relative time in seconds
 

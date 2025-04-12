@@ -138,10 +138,14 @@ def _filter_solution(solution, config):
         return False
 
     correctness = config.get('correctness', None)
+    compilation = config.get('compilation', None)
     lastSubmission = solution.get('lastSubmission') or {}
     evaluation = lastSubmission.get('evaluation') or {}
     score = evaluation.get('score', 0.0) * 100.0
+    initFailed = evaluation.get('initFailed', None)
     if correctness is not None and correctness > score:
+        return False
+    if compilation is not None and compilation != initFailed:
         return False
 
     createdAt = int(solution.get('createdAt', 0))

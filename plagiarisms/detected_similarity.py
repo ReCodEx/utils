@@ -75,7 +75,7 @@ def load_similarities_from_csv(file_name, columns, **kwargs):
     return result
 
 
-def save_similarities(tool_name, tool_params, similarities, assignmnts):
+def save_similarities(tool_name, tool_params, similarities, assignments):
     '''
     Save loaded similarities in one batch upload (return the batch ID).
     Similarities arg holds a list of DetectedSimilarity objects loaded from CSV.

@@ -8,7 +8,7 @@ class Files extends BaseCommand
 {
     public function checkMissingAttachments($dir)
     {
-		$files = $this->db->fetchAssoc('SELECT * FROM uploaded_file
+		$files = $this->db->query('SELECT * FROM uploaded_file
 			WHERE discriminator = ? ORDER BY uploaded_at DESC', 'attachmentfile');
 
 		$count = 0;

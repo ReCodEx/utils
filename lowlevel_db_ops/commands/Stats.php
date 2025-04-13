@@ -279,7 +279,9 @@ class Stats extends BaseCommand
         $studentTried = [];
         $studentSolved = [];
         foreach ($data as $gid => $gdata) {
-            $assCount[] = count($gdata);
+            if (!$groups[$gid]->is_exam) {
+                $assCount[] = count($gdata);
+            }
             $studentTriedGrp = [];
             $studentSolvedGrp = [];
             foreach ($gdata as $aid => $gadata) {
@@ -324,6 +326,7 @@ class Stats extends BaseCommand
         $results = [
             'solvers' => count($solverCount),
             'avg_ass' => (float)array_sum($assCount) / (float)count($assCount),
+            'sol_cnt' => (float)array_sum($solutionsCount),
             'avg_sol_cnt' => (float)array_sum($solutionsCount) / (float)count($solutionsCount),
             'avg_best' => (float)array_sum($bestScore) / (float)count($bestScore),
             'avg_wrong_cnt' => (float)array_sum($notCorrectCount) / (float)count($notCorrectCount),

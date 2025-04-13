@@ -41,6 +41,17 @@ class BaseCommand
             ->fetchAssoc('id');
     }
 
+    protected function getGroupSisBindings($groupId)
+    {
+        return $this->db->fetchPairs('SELECT id, code FROM sis_group_binding WHERE group_id = ?', $groupId);
+    }
+
+    protected function getGroupAttributes($groupId, $service = null)
+    {
+        $serviceQuery = ($service) ? "AND service = '$service'" : '';
+        return $this->db->query("SELECT * FROM group_external_attribute WHERE group_id = ? $serviceQuery", $groupId)->fetchAssoc('id');
+    }
+
     protected function getAssignmentSolversGroupStats($groups)
     {
         $ids = array_map(function ($g) { return $g->id; }, $groups);

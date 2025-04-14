@@ -6,10 +6,16 @@ require_once(__DIR__ . '/helpers.php');
 
 class Files extends BaseCommand
 {
-    public function checkMissingAttachments($dir)
+    public function checkMissingAttachments($dir, $maxCount = null)
     {
 		$files = $this->db->query('SELECT * FROM uploaded_file
 			WHERE discriminator = ? ORDER BY uploaded_at DESC', 'attachmentfile');
+
+		if (!$maxCount) {
+			$maxCount = '32';
+		}
+		$maxCount = (int)$maxCount;
+		$maxCount = max(1, $maxCount);
 
 		$count = 0;
 		$skipped = 0;
@@ -22,7 +28,7 @@ class Files extends BaseCommand
 				}
 				echo "Missing file: $path\n";
 				echo 'ID = ', $file['id'], "\tUser ID = ", $file['user_id'], "\tUploaded at: ", $file['uploaded_at'], "\n";
-				if (++$count > 10) {
+				if (++$count > $maxCount) {
 					break;
 				}
 			} else {

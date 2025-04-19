@@ -48,10 +48,10 @@ class Files extends BaseCommand
 		}, $rows);
 		$translation = $this->db->fetchPairs('SELECT id, assignment_id FROM assignment_solution WHERE id IN (?)', $solutionIds);
 		foreach ($rows as $row) {
-			$assignmentId = $translation[$row[$solutionIdx]];
+			$assignmentId = $translation[$row[$solutionIdx]] ?? null;
 			if (!$assignmentId) {
 				echo "Unable to find assignment for solution ID {$row[$solutionIdx]}.\n";
-				exit;
+				continue;
 			}
 
 			$row[] = $assignmentId;

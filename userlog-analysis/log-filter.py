@@ -6,6 +6,7 @@ import os.path
 import sys
 import gzip
 import csv
+import re
 from datetime import datetime
 from dateutil import parser as dateparser
 
@@ -29,7 +30,11 @@ def _text_max_ts(r, max_ts):
         return None
 
 
-def make_filters(min_time, max_time, seconds, convert_time):
+def _anon_uuids(str):
+    return re.sub(r'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b', '<anon-id>', str)
+
+
+def make_filters(min_time, max_time, seconds, convert_time, anonymize):
     filters = []
 
     if min_time:
@@ -48,6 +53,10 @@ def make_filters(min_time, max_time, seconds, convert_time):
     if convert_time:
         filters.append(lambda r: [r[0], datetime.fromtimestamp(
             int(r[1])).strftime('%Y-%m-%d %H:%M:%S')] + r[2:] if r else None)
+
+    if anonymize:
+        filters.append(lambda r: ['<anon-user>', r[1], '<anon-ip>', r[3],
+                                  _anon_uuids(r[4])] + r[5:] if r else None)
 
     return filters
 
@@ -83,10 +92,13 @@ if __name__ == "__main__":
     parser.add_argument('--seconds', type=str, help="If 'after' is set, then time window of given seconds is listed.")
     parser.add_argument('--convert-time', action='store_true',
                         help="If set, unix ts will be converted to readable format.")
+    parser.add_argument('--anonymize', action='store_true',
+                        help="Replace IDs and IPs with anon str.")
     args = parser.parse_args()
 
-    writer = csv.writer(sys.stdout, delimiter=',')
-    filters = make_filters(args.after, args.before, args.seconds or 0, args.convert_time)
+    writer = csv.writer(sys.stdout, delimiter=',', lineterminator='\n')
+    filters = make_filters(args.after, args.before, args.seconds or 0,
+                           args.convert_time, args.anonymize)
     files = get_files(args.log or './user_actions.log')
     for file in files:
         process_file(file, filters, writer)

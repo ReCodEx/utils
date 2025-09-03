@@ -21,8 +21,7 @@ class Groups extends BaseCommand
 	{
 		$tokens = preg_split('/\s+/', $external_id);
 		$courses = [];
-		$years = [];
-		$unknown = [];
+		$terms = [];
 		foreach ($tokens as $token) {
 			$token = trim($token);
 			if (empty($token)) {
@@ -32,13 +31,13 @@ class Groups extends BaseCommand
 			if (preg_match('/^[a-zA-Z]{3,5}[0-9]{2,3}$/', $token)) {
 				$courses[] = $token;
 			} elseif (preg_match('/^[0-9]{4}-[12]$/', $token)) {
-				$years[] = $token;
+				$terms[] = $token;
 			}
 		}
 
 		return [
 			'course' => $courses,
-			'year' => $years,
+			'term' => $terms,
 		];
 	}
 

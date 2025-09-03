@@ -76,17 +76,18 @@ class Groups extends BaseCommand
 			echo "$counter/$total: Processing group {$group->id} [$depth] ({$name}) ", ($group->is_organizational ? 'O' : ''), ($group->archived_at ? 'A' : ''), "\n";
 			$externalData = self::parseExternalId($group->external_id);
 			$bindings = array_values($this->getGroupSisBindings($group->id));
-			$externalData['group'] = array_values($bindings);
 
 			if ($externalData['course'] && (!$group->is_organizational || $bindings)) {
 				echo "\tUnexpected course IDs: " . implode(", ", $externalData['course']) . " (will be ignored)\n";
 				$externalData['course'] = [];
 
 			}
+
 			if ($bindings && $group->is_organizational) {
 				echo "\tUnexpected group bindings: " . implode(", ", $bindings) . " (will be ignored)\n";
 				$bindings = [];
 			}
+			$externalData['group'] = array_values($bindings);
 
 			$attributes = self::removeMatching($this->getGroupAttributes($group->id, $service), $externalData);
 

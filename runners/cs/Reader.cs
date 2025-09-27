@@ -24,7 +24,7 @@ namespace CodEx {
 
 
 		/// <summary>Static singleton value that keeps console Reader object.</summary>
-		private static Reader console = null;
+		private static Reader? console = null;
 
 		/// <summary>Method providing access to universal console Reader object.</summary>
 		public static Reader Console() {
@@ -135,14 +135,14 @@ namespace CodEx {
 
 		/// <summary>Reads one string token from input. Token does not contain any blank spaces.</summary>
 		/// <returns>String object containing the token or null if reading was not successfull.</returns>
-		public string Word() {
+		public string? Word() {
 			if (!SkipSpaces())
 				return null;
 			int start = index;
 			while (index < len && !System.Char.IsWhiteSpace(buf[index]))
 				index++;
 			if (index < len) return new string(buf, start, index-start);
-			System.Text.StringBuilder sb=new System.Text.StringBuilder();
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
 			sb.Append(buf, start, index-start);
 			while (index == len && Update()) {
 				while (index < len && !System.Char.IsWhiteSpace(buf[index])) 
@@ -155,7 +155,7 @@ namespace CodEx {
 
 		/// <summary>Reads rest of the line from input.</summary>
 		/// <returns>String object containing the line or null if EOF was met.</returns>
-		public string Line() {
+		public string? Line() {
 			if (!Update())
 				return null;
 			int start = index;
@@ -233,7 +233,7 @@ namespace CodEx {
 		#region Fields
 
 		/// <summary>Underlying stram object. It is not null while the stream is opened.</summary>
-		private System.IO.TextReader stream;
+		private System.IO.TextReader? stream;
 
 		/// <summary>Read but unprocessed data. Null after EOF.</summary>
 		private char[] buf;
@@ -260,8 +260,7 @@ namespace CodEx {
 
 			index = 0;
 			if ((len = stream.Read(buf, 0, BUFLEN)) == 0) {
-				len=-1;
-				buf=null;
+				len = -1;
 				return false;
 			}
 			return true;

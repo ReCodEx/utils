@@ -38,11 +38,11 @@ namespace CodEx {
 
 		public static int Main(string[] args) {
 
-			MethodInfo main = null;
+			MethodInfo? main = null;
 			Object[] callParams = { args };
 
 			try {
-				Type[] types = Assembly.GetEntryAssembly().GetTypes();
+				Type[] types = Assembly.GetEntryAssembly()?.GetTypes() ?? [];
 
 				// We'll check all available types.
 				foreach (Type type in types) {
@@ -69,7 +69,7 @@ namespace CodEx {
 				// Fetch information about method parameters (and prepare them).
 				ParameterInfo[] parameters = main.GetParameters();
 				if ((parameters.Length != 1) || (parameters[0].ParameterType != typeof(string[])))
-					callParams = null;
+					callParams = [];
 
 			} catch (Exception e) {
 				Console.Error.WriteLine("Internal error: {0}", e.Message);
@@ -81,7 +81,7 @@ namespace CodEx {
 			try {
 				
 				// Main method is called with given parameters and return value is ignored.
-				Object res = main.Invoke(null, callParams);
+				Object res = main?.Invoke(null, callParams) ?? new object();
 
 				// If main returned nonzero value, we return user's error code.
 				if ((res != null) && (res is Int32) && ((int)res != 0))
@@ -91,9 +91,11 @@ namespace CodEx {
 				return RESULT_OK;
 
 			} catch (TargetInvocationException invocationException) {
-				Exception e = invocationException.InnerException;
-				Console.Error.WriteLine("Unhandled {0} caught: {1}", e.GetType().FullName, e.Message);
-				Console.Error.WriteLine("StackTrace:\n{0}", e.StackTrace);
+				Exception? e = invocationException.InnerException;
+				if (e != null) {
+					Console.Error.WriteLine("Unhandled {0} caught: {1}", e.GetType().FullName, e.Message);
+					Console.Error.WriteLine("StackTrace:\n{0}", e.StackTrace);
+				}
 
 				// Return exit code that corresponds to the type of thrown exception.
 				if (e is NullReferenceException)	return RESULT_NULL_REFERENCE_ERROR;		else

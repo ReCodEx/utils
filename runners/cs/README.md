@@ -14,7 +14,7 @@ The compilation is performed using `dotnet build` and allows access to the inter
 - The loader executable is renamed to `__recodex_exe__`, so it can be easily found by the execution pipeline.
 - The whole output directory is zipped to a single file for easier transfer between compilation and execution steps (which are sandbox-ed separately).
 
-The execution is very similar to standard ELF execution, the only difference is that the entire bin folder needs to be transferred and unzipped before execution.
+The execution also needs a wrapper, but only to invoke the executable file within the binary directory (currently not achievable directly by ReCodEx pipelines). Otherwise, the execution is identical to the simple ELF execution.
 
 ### Additional files
 

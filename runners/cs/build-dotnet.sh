@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# This script wraps compilation of C# projects using `dotnet build`:
+# 1. checks the safety of the .csproj file and the project structure,
+# 2. builds the project,
+# 3. renames the produced executable to a normalized name (__recodex_exe__),
+
 PROJECT_DIR="$1"
-OUTPUT_DIR=`dirname "$0"`/bin
-EXE_NAME='__recodex_exe__'  # normalized name of the loader executable (build will ensure its existence)
-OUT_ZIP=`dirname "$0"`/bin.zip  # output zip file containing packed bin (output) directory
+OUTPUT_DIR='/box/bin'       # normalized name of the output directory
+EXE_NAME='__recodex_exe__'  # normalized name of the loader executable (build will ensure proper renaming)
 
 cd "$PROJECT_DIR" || exit 1
 
@@ -45,9 +49,9 @@ if [ -n "`cat "$CS_PROJ" | grep -E '<Import[>\s]'`"	 ]; then
 fi
 
 # Find all .targets, .props, and .dll files (which are not allowed)
-BAD_FILES=`find . -type f \( -name '*.targets' -o -name '*.props' -o -name '*.dll' \)`
+BAD_FILES=`find . -type f \( -name '*.targets' -o -name '*.props' -o -name '*.dll' -o -name '*.sln' \)`
 if [ -n "$BAD_FILES" ]; then
-  echo "The project contains .targets, .props or .dll files, which are not allowed:"
+  echo "The project contains some .sln, .targets, .props or .dll files, which are not allowed:"
   echo "$BAD_FILES"
   exit 1
 fi
@@ -62,7 +66,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # If there are any warnings, print them (absence "0 Warning(s)"" message is taken as a sign)
-WARN_REPORT=`echo "$BUILD_OUT" | grep -E'\s+0 Warning'`
+WARN_REPORT=`echo "$BUILD_OUT" | grep -E '\s+0 Warning'`
 if [ -z "$WARN_REPORT" ]; then
   echo "$BUILD_OUT"
 fi
@@ -86,7 +90,5 @@ EXE=`echo "$EXES" | head -n 1`
 mv "$EXE" "$OUTPUT_DIR/$EXE_NAME" || exit 1
 
 
-# Zip the output directory (assuming we are still in it)
-zip -q -r "$OUT_ZIP" . || exit 1
-
+# if we get this far, everything went well
 exit 0

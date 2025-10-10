@@ -1,6 +1,9 @@
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -8,9 +11,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 public class javarun {
@@ -24,15 +26,16 @@ public class javarun {
             System.exit(1);
         }
 
-        // parse arguments, first is command
         String command = args[0];
-        // second argument should be base directory
-        String dir = args[1];
+        File baseDir = new File(args[1]);
 
-        if (command.equals("scan")) {
-            scanDir(new File(dir)).forEach(cls -> System.out.println(cls.getName()));
-        } else if (command.equals("run")) {
-            Object[] candidateCls = scanDir(new File(dir)).toArray();
+        if ("scan".equals(command)) {
+            scanDir(baseDir).forEach(cls -> System.out.println(cls.getName()));
+            return;
+        }
+
+        if ("run".equals(command)) {
+            Object[] candidateCls = scanDir(baseDir).toArray();
             long candidateClsCount = candidateCls.length;
 
             if (candidateClsCount == 0) {
@@ -44,103 +47,250 @@ public class javarun {
             }
 
             Class<?> cls = (Class<?>) candidateCls[0];
-            Method main;
-            try {
-                main = cls.getMethod("main", String[].class);
-            } catch (NoSuchMethodException e) {
-                assert false;
-                return;
+            Method main = chooseLaunchableMain(cls);
+            if (main == null) {
+                System.err.println("No launchable main method found");
+                System.exit(102);
             }
 
-            main.setAccessible(true);
+            boolean expectsArgs = (main.getParameterCount() == 1);
+            boolean isStatic = Modifier.isStatic(main.getModifiers());
+            String[] mainArgs = Arrays.copyOfRange(args, 2, args.length);
 
-            try {
-                String[] mainArgs = Arrays.copyOfRange(args, 2, args.length);
-                main.invoke(null, (Object) mainArgs);
-            } catch (OutOfMemoryError ex) {
-                System.exit(100);
-            } catch (SecurityException ex) {
-                System.exit(101);
-            } catch (IllegalAccessException ex) {
-                System.exit(104);
-            } catch (IllegalArgumentException ex) {
-                System.exit(105);
-            } catch (InvocationTargetException ex) {
-                Throwable cause = ex.getCause();
-                if (cause instanceof StackOverflowError) {
-                    System.exit(106);
-                } else if (cause instanceof ArrayIndexOutOfBoundsException) {
-                    System.exit(107);
-                } else if (cause instanceof IndexOutOfBoundsException) {
-                    System.exit(108);
-                } else if (cause instanceof NullPointerException) {
-                    System.exit(109);
-                } else if (cause instanceof ArithmeticException) {
-                    System.exit(110);
-                } else if (cause instanceof OutOfMemoryError) {
-                    System.exit(111);
-                } else if (cause instanceof SecurityException) {
-                    System.exit(112);
-                } else if (cause instanceof IOException) {
-                    System.exit(113);
+            // Make invocable even if not public (Java 25 allows non-private).
+            makeAccessible(main);
+
+            if (isStatic) {
+                // static main
+                if (expectsArgs) {
+                    runOrExit(() -> {main.invoke(null, (Object) mainArgs); return null;});
                 } else {
-                    System.exit(2);
+                    runOrExit(() -> {main.invoke(null); return null;});
                 }
+            } else {
+                // instance main: class must be instantiable with a non-private no-arg ctor
+                Constructor<?> ctor = requireNonPrivateNoArgCtorOrExit(cls);
+                makeAccessible(ctor);
+                Object target = callOrExit(ctor::newInstance);
 
-            } catch (Throwable ex) {
-                System.exit(1);
+                if (expectsArgs) {
+                    runOrExit(() -> {main.invoke(target, (Object) mainArgs); return null;});
+                } else {
+                    runOrExit(() -> {main.invoke(target); return null;});
+                }
             }
+            return;
+        }
 
-        } else {
-            help(System.err);
+        help(System.err);
+        System.exit(1);
+    }
+
+    private void help(PrintStream stream) {
+        stream.println("java javarun scan DIR - print classes with a launchable main() method (Java 25 rules)");
+        stream.println("java javarun run  DIR - run the single launchable main() method found");
+    }
+
+    // ---------- Error handling: centralized ---------------------------------
+
+    /*@FunctionalInterface
+    private interface ThrowingRunnable { void run() throws Throwable; }
+
+    @FunctionalInterface
+    private interface ThrowingSupplier<T> { T get() throws Throwable; }*/
+
+    private static void runOrExit(Callable<Void> action) {
+        try {
+            action.call();
+        } catch (InvocationTargetException ex) {
+            exitFromThrowable(ex.getCause());          // codes 106..113 / 2
+        } catch (OutOfMemoryError ex) {
+            System.exit(100);
+        } catch (SecurityException ex) {
+            System.exit(101);
+        } catch (InaccessibleObjectException | IllegalAccessException ex) {
+            System.exit(104);
+        } catch (IllegalArgumentException ex) {
+            System.exit(105);
+        } catch (Throwable ex) {
             System.exit(1);
         }
     }
 
-    private void help(PrintStream stream) {
-        stream.println("java javarun scan DIR - print a list of classes found recursively in given directory that contain a main() method");
-        stream.println("java javarun run DIR - run the first main() method found recursively in given directory");
-    }
-
-    private String getClassName(Path file) {
-        String[] parts = file.toString().split(Pattern.quote(File.separator));
-        String[] relevant = Arrays.copyOfRange(parts, 1, parts.length);
-
-        String name = String.join(".", relevant);
-        Object className = name.substring(0, name.length() - 6); // Strip .class
-
-        return ((String) (className));
-    }
-
-    private Stream<Class<?>> scanDir(File dir) {
+    private static <T> T callOrExit(Callable<T> action) {
         try {
-            final URLClassLoader loader = new URLClassLoader(new URL[]{dir.toURI().toURL()});
-
-            return Files.walk(dir.toPath())
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".class"))
-                    .<Class<?>>map(path -> {
-                        String className = getClassName(path);
-                        try {
-                            return loader.loadClass(className);
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .filter(cls -> !cls.getName().equals(getClass().getName()))
-                    .filter(cls -> {
-                        try {
-                            Method method = cls.getMethod("main", String[].class);
-                            return Modifier.isStatic(method.getModifiers())
-                                    && Modifier.isPublic(method.getModifiers());
-                        } catch (Exception e) {
-                            return false;
-                        }
-                    });
-        } catch (IOException e) {
-            assert false;
+            return action.call();
+        } catch (InvocationTargetException ex) {
+            exitFromThrowable(ex.getCause());          // codes 106..113 / 2
+            return null; // unreachable
+        } catch (OutOfMemoryError ex) {
+            System.exit(100);
+            return null;
+        } catch (SecurityException ex) {
+            System.exit(101);
+            return null;
+        } catch (InaccessibleObjectException | IllegalAccessException ex) {
+            System.exit(104);
+            return null;
+        } catch (IllegalArgumentException ex) {
+            System.exit(105);
+            return null;
+        } catch (Throwable ex) {
+            System.exit(1);
             return null;
         }
     }
+
+    private static void makeAccessible(AccessibleObject ao) {
+        runOrExit(() -> {ao.setAccessible(true); return null;});
+    }
+
+    private static void exitFromThrowable(Throwable cause) {
+        switch (cause) {
+            case StackOverflowError _ -> System.exit(106);
+            case ArrayIndexOutOfBoundsException _ -> System.exit(107);
+            case IndexOutOfBoundsException _ -> System.exit(108);
+            case NullPointerException _ -> System.exit(109);
+            case ArithmeticException _ -> System.exit(110);
+            case OutOfMemoryError _ -> System.exit(111);
+            case SecurityException _ -> System.exit(112);
+            case IOException _ -> System.exit(113);
+            case null, default -> System.exit(2);
+        }
+    }
+
+    // ---------- Java 25 launcher semantics ----------------------------------
+
+    private static Method chooseLaunchableMain(Class<?> cls) {
+        Method m = findMainMethod(cls, true);   // prefer main(String[])
+        if (m != null) return m;
+        return findMainMethod(cls, false);      // else main()
+    }
+
+    private static Method findMainMethod(Class<?> start, boolean withArgs) {
+        for (Class<?> c = start; c != null; c = c.getSuperclass()) {
+            Method m = findDeclaredMainOn(c, withArgs);
+            if (m != null) return m;
+
+            // Also consider interface default methods (non-static)
+            Method mi = findDeclaredMainOnInterfaces(c.getInterfaces(), withArgs, new HashSet<>());
+            if (mi != null) return mi;
+        }
+        return null;
+    }
+
+    private static Method findDeclaredMainOn(Class<?> c, boolean withArgs) {
+        for (Method m : c.getDeclaredMethods()) {
+            if (!m.getName().equals("main")) continue;
+            if (Modifier.isPrivate(m.getModifiers())) continue;  // non-private only
+            if (m.getReturnType() != void.class) continue;
+
+            if (withArgs) {
+                if (m.getParameterCount() == 1 && m.getParameterTypes()[0] == String[].class) {
+                    return m;
+                }
+            } else {
+                if (m.getParameterCount() == 0) {
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Method findDeclaredMainOnInterfaces(Class<?>[] ifaces, boolean withArgs, Set<Class<?>> visited) {
+        for (Class<?> itf : ifaces) {
+            if (!visited.add(itf)) continue;
+
+            Method m = findDeclaredMainOn(itf, withArgs);
+            if (m != null && !Modifier.isStatic(m.getModifiers())) {
+                // interface default (instance) main()
+                return m;
+            }
+            Method mi = findDeclaredMainOnInterfaces(itf.getInterfaces(), withArgs, visited);
+            if (mi != null) return mi;
+        }
+        return null;
+    }
+
+    private static boolean isLaunchable(Class<?> cls) {
+        Method m = chooseLaunchableMain(cls);
+        if (m == null) return false;
+
+        if (Modifier.isStatic(m.getModifiers())) return true;
+
+        // instance main -> class must be concrete with a non-private no-arg ctor
+        if (cls.isInterface() || Modifier.isAbstract(cls.getModifiers())) return false;
+        try {
+            Constructor<?> ctor = cls.getDeclaredConstructor();
+            return !Modifier.isPrivate(ctor.getModifiers());
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    private static Constructor<?> requireNonPrivateNoArgCtorOrExit(Class<?> cls) {
+        if (cls.isInterface() || Modifier.isAbstract(cls.getModifiers())) {
+            System.err.println("Class not instantiable for instance main");
+            System.exit(102);
+        }
+        try {
+            Constructor<?> ctor = cls.getDeclaredConstructor();
+            if (Modifier.isPrivate(ctor.getModifiers())) {
+                System.err.println("No non-private no-arg constructor for instance main");
+                System.exit(102);
+            }
+            return ctor;
+        } catch (NoSuchMethodException e) {
+            System.err.println("No non-private no-arg constructor for instance main");
+            System.exit(102);
+            return null;
+        }
+    }
+
+    // ---------- Scanning ----------------------------------------------------
+
+    private Stream<Class<?>> scanDir(File dir) {
+        final Path root = dir.toPath();
+
+        // Load classes first into a list so we can safely close the loader.
+        List<Class<?>> found = new ArrayList<>();
+        try (URLClassLoader loader = new URLClassLoader(new URL[]{dir.toURI().toURL()})) {
+            try (Stream<Path> paths = Files.walk(root)) {
+                paths.filter(Files::isRegularFile)
+                     .filter(path -> path.toString().endsWith(".class"))
+                     .filter(path -> !path.getFileName().toString().equals("module-info.class"))
+                     .forEach(path -> {
+                         String className = toBinaryName(root, path);
+                         if (className == null) return;
+                         try {
+                             Class<?> c = loader.loadClass(className);
+                             if (!c.getName().equals(getClass().getName()) && isLaunchable(c)) {
+                                 found.add(c);
+                             }
+                         } catch (Throwable ignore) {
+                             // ignore unloadable/broken classes
+                         }
+                     });
+            }
+        } catch (IOException e) {
+            assert false;
+        }
+        return found.stream();
+    }
+
+    private static String toBinaryName(Path root, Path classFile) {
+        Path rel;
+        try {
+            rel = root.toAbsolutePath().normalize()
+                      .relativize(classFile.toAbsolutePath().normalize());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+        String n = rel.toString();
+        if (!n.endsWith(".class")) return null;
+        String withoutExt = n.substring(0, n.length() - 6);
+        return withoutExt.replace(File.separatorChar, '.'); // keep '$' for nested
+    }
 }
+

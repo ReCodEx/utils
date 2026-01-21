@@ -106,4 +106,44 @@ class Groups extends BaseCommand
 			}
 		}
     }
+
+	public function fillForTermAttributes()
+	{
+		$service = 'sis-cuni';
+		$key = 'for-term';
+		$year = (int)date('Y') - 2;
+
+		$groups = $this->getGroups(true);
+		$courseGroups = [];
+		$forTerms = [];
+		foreach ($groups as $group) {
+			$attributes = $this->getGroupAttributes($group->id, $service);
+			foreach ($attributes as $attribute) {
+				if ($attribute->key === 'course') {
+					$courseGroups[$group->id] = $group;
+				} elseif ($attribute->key === 'term') {
+					list($y, $t) = explode('-', $attribute->value);
+					if ((int)$y >= $year) {
+						$forTerms[$group->parent_group_id][$t] = true;
+					}
+				}
+			}
+		}
+		
+		echo "Deleting all $key attributes for service $service ...\n";
+		$this->db->query('DELETE FROM group_external_attribute WHERE `service` = ? AND `key` = ?', $service, $key);
+		foreach ($forTerms as $gid => $terms) {
+			if (empty($courseGroups[$gid]) || !empty($courseGroups[$gid]->archived_at)) {
+				continue;
+			}
+			foreach ([ '1', '2' ] as $term) {
+				if (!empty($terms[$term])) {
+					echo "Adding $key attribute ($term) to group $gid ...\n";
+					$this->db->query('INSERT INTO `group_external_attribute` (`id`, `group_id`, `service`, `key`, `value`, `created_at`) VALUES (uuid(), ?, ?, ?, ?, ?)',
+						$gid, $service, $key, $term, new DateTime());
+
+				}
+			}
+		}
+	}
 }

@@ -174,7 +174,10 @@ class BaseCommand
             WHERE eet.exercise_id = ?', $exerciseId);
     }
 
-    
+    protected function getUploadedFile($id)
+    {
+        return $this->db->fetch('SELECT * FROM uploaded_file WHERE id = ?', $id);
+    }
     protected function getAssignmentSupplementaryFiles($assignmentId)
     {
         return $this->db->fetchPairs('SELECT f.name, f.id FROM assignment_supplementary_exercise_file AS af
@@ -225,6 +228,16 @@ class BaseCommand
     protected function getRuntimeConfigs()
     {
         return $this->db->fetchPairs('SELECT id, default_variables FROM runtime_environment');
+    }
+
+    protected function getAssignmentSolution($id)
+    {
+        return $this->db->fetch("SELECT * FROM assignment_solution WHERE id = ?", $id);
+    }
+
+    protected function getAssignmentSolutionBySolutionId($id)
+    {
+        return $this->db->fetch("SELECT * FROM assignment_solution WHERE solution_id = ?", $id);
     }
 
     protected function getAssignmentSolutionsEvaluations($id)

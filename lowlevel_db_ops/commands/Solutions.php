@@ -64,4 +64,52 @@ class Solutions extends BaseCommand
 
         echo "\n";
     }
+
+    public function fromLog()
+    {
+        // read CSV log from stdin
+        $solutions = [];
+        $fp = fopen('php://stdin', 'r');
+        while (($row = fgetcsv($fp)) !== false) {
+            list($user, $ts, $ip, $endpoint, $params) = $row;
+            if (str_ends_with($endpoint, 'UploadedFiles:content') || str_ends_with($endpoint, 'UploadedFiles:download')) {
+                $json = json_decode($params, true);
+                if ($json && array_key_exists('id', $json)) {
+                    $id = $json['id'];
+                    $solutions[$id] = $solutions[$id] ?? [];
+                    $solutions[$id][] = [
+                        'ts' => $ts,
+                        'ip' => $ip,
+                        'endpoint' => $endpoint,
+                        'entry' => $json['entry'] ?? null,
+                        'user' => $user,
+                    ];
+                } else {
+                    echo "Warning: unable to parse JSON params.\n";
+                    echo implode(",", $row), "\n\n";
+                }
+            }
+        }
+
+        foreach ($solutions as $id => $entries) {
+            $file = $this->getUploadedFile($id);
+            if (!$file) {
+                echo "Warning: uploaded file $id not found.\n";
+                continue;
+            }
+            if ($file->solution_id === null) {
+                echo "Warning: uploaded file $id not related to any solution.\n";
+                continue;
+            }
+            
+            $solution = $this->getAssignmentSolutionBySolutionId($file->solution_id);
+            echo "https://recodex.mff.cuni.cz/app/assignment/{$solution->assignment_id}/solution/{$solution->id}\n";
+            foreach ($entries as $entry) {
+                echo "\t[{$entry['ts']}] ({$entry['ip']}): '{$entry['entry']}' by {$entry['user']}\n";
+            }
+            echo "\n";
+        }
+
+        fclose($fp);
+    }
 }

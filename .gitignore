@@ -20,3 +20,8 @@ installation/virtual_*
 /plagiarisms/archive
 /plagiarisms/last
 /plagiarisms/logs
+
+# rust-cargo-builder generated artifacts
+/rust-cargo-builder/Cargo.lock
+/rust-cargo-builder/vendor/
+/rust-cargo-builder/target/

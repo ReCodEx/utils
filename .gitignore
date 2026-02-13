@@ -29,3 +29,8 @@ installation/virtual_*
 /solution-downloader/*.yaml
 /solution-downloader/*.bat
 
+
+# rust-cargo-builder generated artifacts
+/rust-cargo-builder/Cargo.lock
+/rust-cargo-builder/vendor/
+/rust-cargo-builder/target/

@@ -145,8 +145,8 @@ def _filter_solution(solution, config):
     initFailed = evaluation.get('initFailed', None)
     if correctness is not None and correctness > score:
         return False
-    if compilation is not None and compilation != initFailed:
-        return False
+    if compilation is not None and compilation == initFailed:
+        return False  # compilation == failed is negation, so we terminate
 
     createdAt = int(solution.get('createdAt', 0))
     createdAtLimit = config.get('createdAt', None)

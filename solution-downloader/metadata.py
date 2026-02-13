@@ -176,7 +176,7 @@ class MetadataHandler:
         return path
 
     def _write_manifest_row(self):
-        row = map(lambda p: self._fetch(p), self.manifest_config.values())
+        row = map(lambda p: self._fetch(p, True), self.manifest_config.values())
         self.manifest_csv_writer.writerow(row)
 
     def write_manifest(self):

@@ -105,10 +105,9 @@ if __name__ == "__main__":
     groups = get_groups(config.get('groups', []))
     group_counter = 0
     for group in groups:
-        metadata.set_group(group)
         group_counter += 1
+        metadata.set_group(group)
         print("Loading assignments in group {} ({} of {}) ...".format(group['id'], group_counter, len(groups)))
-
         assignments = recodex_api.get_assignments(group['id'], exercise_id)
         assignment_counter = 0
         for assignment in assignments:

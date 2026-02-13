@@ -20,3 +20,12 @@ installation/virtual_*
 /plagiarisms/archive
 /plagiarisms/last
 /plagiarisms/logs
+/userlog-analysis/.vscode
+/userlog-analysis/*.log
+/userlog-analysis/*.gz
+/userlog-analysis/*/*.log
+/userlog-analysis/*/*.gz
+/lowlevel_db_ops/config/*
+/solution-downloader/*.yaml
+/solution-downloader/*.bat
+

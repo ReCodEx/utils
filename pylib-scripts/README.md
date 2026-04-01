@@ -27,6 +27,7 @@ client = client_factory.get_client_from_session()
 ```
 
 **Scripts:**
+- [accept.py](accept.py) - mark all best solutions as accepted and add a message to each of their comment threads about the acceptance
 - [download-solutions.py](download-solutions.py) - download all solutions (as .zip files) for a given assignment to a specified directory
 - [groups.py](groups.py) - lists all root groups (and their admins) as a tree
 - [students.py](students.py) - gather all students from a particular subtree of the groups hierarchy and output them in a CSV format

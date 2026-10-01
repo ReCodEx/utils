@@ -10,10 +10,10 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.release>{{JAVA_VERSION}}</maven.compiler.release>
+        <maven.compiler.release>27</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <javafx.version>{{JAVA_VERSION}}</javafx.version>
+        <javafx.version>27</javafx.version>
     </properties>
 
 <!--    <modules>

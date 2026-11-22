@@ -1,4 +1,4 @@
-#!/usr/bin/php -c/usr/etc
+#!/usr/bin/php
 <?php
 
 array_shift($argv);
